@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>waste_track_driver_app</string>
+	<string>Waste Track Driver App</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -45,5 +45,31 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+    <!-- Ubicación mientras usa la app -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Necesitamos tu ubicación para rastrear las rutas de recolección.</string>
+
+    <!-- Ubicación siempre (background) -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Necesitamos tu ubicación en segundo plano para seguimiento de rutas.</string>
+
+    <!-- Cámara -->
+    <key>NSCameraUsageDescription</key>
+    <string>Necesitamos acceso a la cámara para tomar fotos de evidencia.</string>
+
+    <!-- Fotos -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Necesitamos acceso a tus fotos para adjuntar evidencia.</string>
+
+    <!-- Notificaciones (no requiere permiso explícito en Info.plist) -->
+
+    <!-- TODO: DELETE THIS ON PRODUCTION, USE IT ONLY IN DEVELOPMENT -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>
