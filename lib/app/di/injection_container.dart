@@ -64,7 +64,7 @@ Future<void> init() async {
   );
 
   // Auth Bloc (Factory - nueva instancia cada vez)
-  sl.registerFactory<AuthBloc>(
+  sl.registerLazySingleton<AuthBloc>(
         () => AuthBloc(authRepository: sl<AuthRepository>()),
   );
 }
