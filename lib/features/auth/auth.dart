@@ -10,5 +10,4 @@ export 'model/authenticated_user_response.dart';
 export 'model/sign_in_request.dart';
 
 // UI
-// TODO: Add later
-// export 'ui/login_page.dart';
+export 'ui/login_page.dart';
