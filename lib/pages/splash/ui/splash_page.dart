@@ -27,31 +27,14 @@ class SplashPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Icon(
-                  Icons.local_shipping,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
+              Image.asset(
+                'assets/images/logo-with-name.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
               ),
 
-              const SizedBox(height: 32),
-
-              // Nombre de la app
-              const Text(
-                'EcoLutions',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.white,
-                ),
-              ),
+              const SizedBox(height: 48),
 
               const Text(
                 'Driver App',
