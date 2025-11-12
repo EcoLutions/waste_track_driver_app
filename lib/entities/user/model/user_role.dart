@@ -1,13 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 enum UserRole {
-  @JsonValue('SUPER_ADMIN')
+  @JsonValue('ROLE_SUPER_ADMIN')
   superAdmin,
-  @JsonValue('MUNICIPAL_ADMIN')
+  @JsonValue('ROLE_MUNICIPAL_ADMIN')
   municipalAdmin,
-  @JsonValue('DRIVER')
+  @JsonValue('ROLE_DRIVER')
   driver,
-  @JsonValue('CITIZEN')
+  @JsonValue('ROLE_CITIZEN')
   citizen;
 
   String get displayName {
@@ -36,25 +36,25 @@ extension UserRoleExtension on UserRole {
   String toJson() {
     switch (this) {
       case UserRole.superAdmin:
-        return 'SUPER_ADMIN';
+        return 'ROLE_SUPER_ADMIN';
       case UserRole.municipalAdmin:
-        return 'MUNICIPAL_ADMIN';
+        return 'ROLE_MUNICIPAL_ADMIN';
       case UserRole.driver:
-        return 'DRIVER';
+        return 'ROLE_DRIVER';
       case UserRole.citizen:
-        return 'CITIZEN';
+        return 'ROLE_CITIZEN';
     }
   }
 
   static UserRole fromString(String role) {
     switch (role.toUpperCase()) {
-      case 'SUPER_ADMIN':
+      case 'ROLE_SUPER_ADMIN':
         return UserRole.superAdmin;
-      case 'MUNICIPAL_ADMIN':
+      case 'ROLE_MUNICIPAL_ADMIN':
         return UserRole.municipalAdmin;
-      case 'DRIVER':
+      case 'ROLE_DRIVER':
         return UserRole.driver;
-      case 'CITIZEN':
+      case 'ROLE_CITIZEN':
         return UserRole.citizen;
       default:
         throw ArgumentError('Unknown role: $role');
