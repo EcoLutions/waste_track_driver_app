@@ -6,10 +6,10 @@ part 'authenticated_user_response.g.dart';
 @freezed
 sealed class AuthenticatedUserResponse with _$AuthenticatedUserResponse {
   const factory AuthenticatedUserResponse({
-    required String id,
-    required String email,
-    required String username,
-    required String token,
+      String? id,
+      String? email,
+      String? username,
+      String? token,
   }) = _AuthenticatedUserResponse;
 
   factory AuthenticatedUserResponse.fromJson(Map<String, dynamic> json) =>

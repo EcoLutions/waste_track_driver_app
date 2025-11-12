@@ -21,6 +21,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Resource<User>> signIn(SignInRequest request) async {
+    if (request.email == null || request.email!.isEmpty) {
+      return const Failure(message: 'Email es requerido');
+    }
+    if (request.password == null || request.password!.isEmpty) {
+      return const Failure(message: 'Contraseña es requerida');
+    }
+
     final signInResult = await _authService.signIn(request);
 
     return switch (signInResult) {
@@ -34,13 +41,17 @@ class AuthRepositoryImpl implements AuthRepository {
     };
   }
 
-  Future<Resource<User>> _handleSuccessfulSignIn(String token) async {
+  Future<Resource<User>> _handleSuccessfulSignIn(String? token) async {
+    if (token == null) {
+      return const Failure(message: 'Token no encontrado');
+    }
+
     await _secureStorage.saveToken(token);
 
     final userResult = await _userService.getCurrentUser();
 
     return switch (userResult) {
-      Success(data: final user) => _validateUserRole(user),
+      Success(data: final userDto) => _validateUserRole(userDto.toDomain()),
       Failure(message: final msg, statusCode: final code) => Failure(
         message: msg,
         statusCode: code,
@@ -76,7 +87,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final userResult = await _userService.getCurrentUser();
 
     return switch (userResult) {
-      Success(data: final user) => _validateUserRole(user),
+      Success(data: final userDto) => _validateUserRole(userDto.toDomain()),
       Failure(message: final msg, statusCode: final code) => Failure(
         message: msg,
         statusCode: code,
