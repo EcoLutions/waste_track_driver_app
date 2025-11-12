@@ -53,7 +53,7 @@ class HomePage extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withOpacity(0.2),
+                    color: AppColors.primaryLight.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
