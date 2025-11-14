@@ -1,9 +1,15 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository_impl.dart';
+import 'package:waste_track_driver_app/entities/district/district.dart';
 import 'package:waste_track_driver_app/entities/user/user.dart';
-import 'package:waste_track_driver_app/features/auth/api/auth_service_imp.dart';
-import 'package:waste_track_driver_app/features/auth/auth.dart';
+import 'package:waste_track_driver_app/entities/user_profile/user_profile.dart';
+import 'package:waste_track_driver_app/features/authentication/api/auth_service_imp.dart';
+import 'package:waste_track_driver_app/features/authentication/authentication.dart';
 import 'package:waste_track_driver_app/shared/api/dio_client.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/local_storage_service.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/secure_storage_service.dart';
@@ -35,7 +41,7 @@ Future<void> init() async {
 
   // ==================== SHARED - API ====================
 
-  // Dio Client (con interceptor JWT)
+  // Dio Client (with interceptor JWT)
   sl.registerLazySingleton<DioClient>(
         () => DioClient(sl<SecureStorageService>()),
   );
@@ -47,24 +53,53 @@ Future<void> init() async {
         () => UserServiceImpl(sl<DioClient>()),
   );
 
-  // ==================== FEATURES - AUTH ====================
+  // ==================== ENTITIES - USER PROFILE ====================
 
-  // Auth Service
-  sl.registerLazySingleton<AuthService>(
-        () => AuthServiceImpl(sl<DioClient>()),
+  // UserProfile Service
+  sl.registerLazySingleton<UserProfileService>(
+        () => UserProfileServiceImpl(sl<DioClient>()),
   );
 
-  // Auth Repository
+  // ==================== ENTITIES - DISTRICT ====================
+
+  // District Service
+  sl.registerLazySingleton<DistrictService>(
+        () => DistrictServiceImpl(sl<DioClient>()),
+  );
+
+// ==================== APP BLOCS ====================
+// AuthBloc (global)
+  sl.registerFactory<AuthBloc>(
+        () => AuthBloc(authRepository: sl()),
+  );
+
+// UserSessionBloc (global)
+  sl.registerFactory<UserSessionBloc>(
+        () => UserSessionBloc(userSessionRepository: sl()),
+  );
+
+// ==================== REPOSITORIES ====================
+// AuthRepository
   sl.registerLazySingleton<AuthRepository>(
         () => AuthRepositoryImpl(
-      authService: sl<AuthService>(),
-      userService: sl<UserService>(),
-      secureStorage: sl<SecureStorageService>(),
+      authService: sl(),
+      userService: sl(),
+      secureStorage: sl(),
     ),
   );
 
-  // Auth Bloc (Factory - nueva instancia cada vez)
-  sl.registerLazySingleton<AuthBloc>(
-        () => AuthBloc(authRepository: sl<AuthRepository>()),
+// UserSessionRepository
+  sl.registerLazySingleton<UserSessionRepository>(
+        () => UserSessionRepositoryImpl(
+      userService: sl(),
+      userProfileService: sl(),
+      districtService: sl(),
+    ),
+  );
+
+// ==================== SERVICES ====================
+// AuthService
+  sl.registerLazySingleton<AuthService>(
+        () => AuthServiceImpl(sl()),
   );
 }

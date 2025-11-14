@@ -8,16 +8,27 @@ sealed class AuthEvent extends Equatable {
 }
 
 final class SignInRequested extends AuthEvent {
-
   const SignInRequested({
     required this.email,
     required this.password,
   });
+
   final String email;
   final String password;
 
   @override
   List<Object?> get props => [email, password];
+}
+
+final class ForgotPasswordRequested extends AuthEvent {
+  const ForgotPasswordRequested({
+    required this.email,
+  });
+
+  final String email;
+
+  @override
+  List<Object?> get props => [email];
 }
 
 final class TokenValidationRequested extends AuthEvent {
@@ -26,4 +37,8 @@ final class TokenValidationRequested extends AuthEvent {
 
 final class LogoutRequested extends AuthEvent {
   const LogoutRequested();
+}
+
+final class SessionExpired extends AuthEvent {
+  const SessionExpired();
 }
