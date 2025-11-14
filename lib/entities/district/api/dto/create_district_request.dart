@@ -8,8 +8,9 @@ sealed class CreateDistrictRequest with _$CreateDistrictRequest {
   const factory CreateDistrictRequest({
     String? name,
     String? code,
-    String? boundaries,
     String? primaryAdminEmail,
+    String? primaryAdminUsername,
+    String? planId,
   }) = _CreateDistrictRequest;
 
   factory CreateDistrictRequest.fromJson(Map<String, dynamic> json) =>

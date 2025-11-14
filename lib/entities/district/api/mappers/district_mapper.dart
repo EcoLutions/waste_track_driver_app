@@ -10,14 +10,24 @@ extension DistrictResponseMapper on DistrictResponse {
       id: id ?? '',
       name: name ?? '',
       code: code ?? '',
-      boundaries: boundaries ?? '',
+      depotLatitud: depotLatitud,
+      depotLongitude: depotLongitude,
       operationalStatus: OperationalStatusMapper.parse(operationalStatus),
-      serviceStartDate: _parseDate(serviceStartDate),
-      subscriptionId: subscriptionId ?? '',
+      serviceStartDate: _parseDateOrNull(serviceStartDate),
+      operationStartTime: operationStartTime,
+      operationEndTime: operationEndTime,
+      maxRouteDuration: maxRouteDuration,
+      planId: planId,
+      planName: planName,
       maxVehicles: maxVehicles ?? 0,
       maxDrivers: maxDrivers ?? 0,
       maxContainers: maxContainers ?? 0,
-      primaryAdminEmail: primaryAdminEmail ?? '',
+      currency: currency,
+      price: price,
+      billingPeriod: billingPeriod,
+      currentVehicleCount: currentVehicleCount ?? 0,
+      currentDriverCount: currentDriverCount ?? 0,
+      currentContainerCount: currentContainerCount ?? 0,
       createdAt: _parseDate(createdAt),
       updatedAt: _parseDate(updatedAt),
     );
@@ -34,15 +44,32 @@ extension DistrictResponseMapper on DistrictResponse {
       return DateTime(0);
     }
   }
+
+  DateTime? _parseDateOrNull(String? date) {
+    if (date == null || date.isEmpty) {
+      return null;
+    }
+
+    try {
+      return DateTime.parse(date);
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 extension DistrictToCreateRequestMapper on District {
-  CreateDistrictRequest toCreateRequest() {
+  CreateDistrictRequest toCreateRequest({
+    required String primaryAdminEmail,
+    required String primaryAdminUsername,
+    required String planId,
+  }) {
     return CreateDistrictRequest(
       name: name,
       code: code,
-      boundaries: boundaries,
       primaryAdminEmail: primaryAdminEmail,
+      primaryAdminUsername: primaryAdminUsername,
+      planId: planId,
     );
   }
 }
@@ -53,8 +80,11 @@ extension DistrictToUpdateRequestMapper on District {
       districtId: id,
       name: name,
       code: code,
-      boundaries: boundaries,
-      primaryAdminEmail: primaryAdminEmail,
+      depotLatitud: depotLatitud,
+      depotLongitude: depotLongitude,
+      operationStartTime: operationStartTime,
+      operationEndTime: operationEndTime,
+      maxRouteDuration: maxRouteDuration,
     );
   }
 }

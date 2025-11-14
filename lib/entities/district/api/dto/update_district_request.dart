@@ -9,8 +9,11 @@ sealed class UpdateDistrictRequest with _$UpdateDistrictRequest {
     String? districtId,
     String? name,
     String? code,
-    String? boundaries,
-    String? primaryAdminEmail,
+    String? depotLatitud,
+    String? depotLongitude,
+    String? operationStartTime,
+    String? operationEndTime,
+    String? maxRouteDuration,
   }) = _UpdateDistrictRequest;
 
   factory UpdateDistrictRequest.fromJson(Map<String, dynamic> json) =>

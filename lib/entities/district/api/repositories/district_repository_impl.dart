@@ -16,7 +16,7 @@ class DistrictRepositoryImpl implements DistrictRepository {
     return switch (result) {
       Success(data: final dto) => Success(dto.toDomain()),
       Failure(message: final msg, statusCode: final code) =>
-        Failure(message: msg, statusCode: code),
+          Failure(message: msg, statusCode: code),
     };
   }
 
@@ -26,22 +26,31 @@ class DistrictRepositoryImpl implements DistrictRepository {
 
     return switch (result) {
       Success(data: final dtoList) => Success(
-          dtoList.map((dto) => dto.toDomain()).toList(),
-        ),
+        dtoList.map((dto) => dto.toDomain()).toList(),
+      ),
       Failure(message: final msg, statusCode: final code) =>
-        Failure(message: msg, statusCode: code),
+          Failure(message: msg, statusCode: code),
     };
   }
 
   @override
-  Future<Resource<District>> create(District district) async {
-    final request = district.toCreateRequest();
+  Future<Resource<District>> create({
+    required District district,
+    required String primaryAdminEmail,
+    required String primaryAdminUsername,
+    required String planId,
+  }) async {
+    final request = district.toCreateRequest(
+      primaryAdminEmail: primaryAdminEmail,
+      primaryAdminUsername: primaryAdminUsername,
+      planId: planId,
+    );
     final result = await _service.create(request);
 
     return switch (result) {
       Success(data: final dto) => Success(dto.toDomain()),
       Failure(message: final msg, statusCode: final code) =>
-        Failure(message: msg, statusCode: code),
+          Failure(message: msg, statusCode: code),
     };
   }
 
@@ -53,7 +62,7 @@ class DistrictRepositoryImpl implements DistrictRepository {
     return switch (result) {
       Success(data: final dto) => Success(dto.toDomain()),
       Failure(message: final msg, statusCode: final code) =>
-        Failure(message: msg, statusCode: code),
+          Failure(message: msg, statusCode: code),
     };
   }
 

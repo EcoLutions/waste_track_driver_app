@@ -6,7 +6,12 @@ abstract class DistrictRepository {
 
   Future<Resource<List<District>>> getAll();
 
-  Future<Resource<District>> create(District district);
+  Future<Resource<District>> create({
+    required District district,
+    required String primaryAdminEmail,
+    required String primaryAdminUsername,
+    required String planId,
+  });
 
   Future<Resource<District>> update(District district);
 
