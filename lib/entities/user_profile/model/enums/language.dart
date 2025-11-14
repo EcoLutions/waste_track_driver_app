@@ -20,7 +20,7 @@ enum Language {
       case Language.en:
         return 'English';
       case Language.pt:
-        return 'Português';
+        return 'Portugués';
       case Language.fr:
         return 'Français';
     }
