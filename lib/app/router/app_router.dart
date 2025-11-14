@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
 import 'package:waste_track_driver_app/app/di/injection_container.dart';
-import 'package:waste_track_driver_app/features/auth/auth.dart';
 import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
+import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/splash/ui/splash_page.dart';
 
 class AppRouter {
@@ -66,20 +67,14 @@ class AppRouter {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (context, state) => BlocProvider.value(
-          value: _authBloc,
-          child: const LoginPage(),
-        ),
+        builder: (context, state) => const LoginPage(),
       ),
 
       // Home
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => BlocProvider.value(
-          value: _authBloc,
-          child: const HomePage(),
-        ),
+        builder: (context, state) => const HomePage(),
       ),
     ],
 

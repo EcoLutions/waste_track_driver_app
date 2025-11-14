@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_event.dart';
+import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/features/auth/auth.dart';
 
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
