@@ -17,7 +17,7 @@ sealed class District with _$District {
     required int currentDriverCount,
     required int currentContainerCount,
     required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? updatedAt,
     String? depotLatitud,
     String? depotLongitude,
     DateTime? serviceStartDate,
