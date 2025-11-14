@@ -59,7 +59,7 @@ class _LoginFormState extends State<LoginForm> {
                 color: AppColors.primary,
               ),
               filled: true,
-              fillColor: AppColors.greyLight.withOpacity(0.5),
+              fillColor: AppColors.greyLight.withValues(alpha: 0.5),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -130,7 +130,7 @@ class _LoginFormState extends State<LoginForm> {
                 },
               ),
               filled: true,
-              fillColor: AppColors.greyLight.withOpacity(0.5),
+              fillColor: AppColors.greyLight.withValues(alpha: 0.5),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -187,7 +187,7 @@ class _LoginFormState extends State<LoginForm> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.4),
+                  color: AppColors.primary.withValues(alpha: 0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),

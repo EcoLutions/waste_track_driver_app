@@ -105,7 +105,7 @@ class PasswordRecoveryBottomSheet extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                   filled: true,
-                  fillColor: AppColors.greyLight.withOpacity(0.5),
+                  fillColor: AppColors.greyLight.withValues(alpha: 0.5),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -139,7 +139,7 @@ class PasswordRecoveryBottomSheet extends StatelessWidget {
                       ? null
                       : [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: AppColors.primary.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),

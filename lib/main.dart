@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_event.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
@@ -11,41 +12,52 @@ import 'package:waste_track_driver_app/app/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Dependency injection container initialization
   await di.init();
-
   runApp(const EcoLutionsDriverApp());
 }
 
-class EcoLutionsDriverApp extends StatelessWidget {
+class EcoLutionsDriverApp extends StatefulWidget {
   const EcoLutionsDriverApp({super.key});
+
+  @override
+  State<EcoLutionsDriverApp> createState() => _EcoLutionsDriverAppState();
+}
+
+class _EcoLutionsDriverAppState extends State<EcoLutionsDriverApp> {
+  late final AuthBloc _authBloc;
+  late final UserSessionBloc _userSessionBloc;
+  late final GoRouter router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authBloc = di.sl<AuthBloc>()..add(const TokenValidationRequested());
+    _userSessionBloc = di.sl<UserSessionBloc>();
+    router = AppRouter.createRouter(_authBloc);
+  }
+
+  @override
+  void dispose() {
+    _authBloc.close();
+    _userSessionBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // AuthBloc - Maneja autenticación (token, roles)
-        BlocProvider<AuthBloc>(
-          create: (context) => di.sl<AuthBloc>()
-            ..add(const TokenValidationRequested()),
-        ),
-
-        // UserSessionBloc - Maneja contexto del usuario (User, UserProfile, District)
-        BlocProvider<UserSessionBloc>(
-          create: (context) => di.sl<UserSessionBloc>(),
-        ),
+        BlocProvider<AuthBloc>.value(value: _authBloc),
+        BlocProvider<UserSessionBloc>.value(value: _userSessionBloc),
       ],
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
-          // Cuando se autentica exitosamente, cargar datos del usuario
           if (state is AuthAuthenticated) {
             context.read<UserSessionBloc>().add(
               LoadUserSession(userId: state.userId),
             );
           }
 
-          // Cuando cierra sesión, limpiar datos del usuario
           if (state is AuthUnauthenticated) {
             context.read<UserSessionBloc>().add(const ClearUserSession());
           }
@@ -54,7 +66,7 @@ class EcoLutionsDriverApp extends StatelessWidget {
           title: 'EcoLutions Driver',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          routerConfig: AppRouter.router,
+          routerConfig: router,
         ),
       ),
     );
