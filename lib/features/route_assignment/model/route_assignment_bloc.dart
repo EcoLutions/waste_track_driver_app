@@ -27,12 +27,13 @@ class RouteAssignmentBloc
       LoadActiveRoute event,
       Emitter<RouteAssignmentState> emit,
       ) async {
-    _logger.i('🚀 Loading active route for driver: ${event.driverId}');
+    _logger.i('🚀 Loading active route for driver: ${event.driverId} in district: ${event.districtId}');
     emit(const RouteAssignmentState.loading());
 
     try {
       final result = await _routeAssignmentRepository.loadActiveRouteForDriver(
-        event.driverId,
+        driverId: event.driverId,
+        districtId: event.districtId,
       );
 
       _logger.i('📦 Repository returned: ${result.runtimeType}');

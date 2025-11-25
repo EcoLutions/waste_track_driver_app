@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
 import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
@@ -29,17 +29,21 @@ class _HomePageState extends State<HomePage> {
   void _loadActiveRoute() {
     debugPrint('🏠 HomePage - _loadActiveRoute called');
     try {
-      final authState = context.read<AuthBloc>().state;
-      debugPrint('🏠 Auth State: ${authState.runtimeType}');
-      debugPrint('🏠 User ID: ${authState.userId}');
+      final userSessionState = context.read<UserSessionBloc>().state;
+      debugPrint('🏠 User Session State: ${userSessionState.runtimeType}');
+      debugPrint('🏠 Driver ID: ${userSessionState.driver?.id}');
+      debugPrint('🏠 District ID: ${userSessionState.district?.id}');
 
-      if (authState.userId != null) {
-        debugPrint('🏠 Loading route for driver: ${authState.userId}');
+      if (userSessionState.driver != null && userSessionState.district != null) {
+        debugPrint('🏠 Loading route for driver: ${userSessionState.driver!.id}');
         context.read<RouteAssignmentBloc>().add(
-          LoadActiveRoute(driverId: authState.userId!),
+          LoadActiveRoute(
+            driverId: userSessionState.driver!.id,
+            districtId: userSessionState.district!.id,
+          ),
         );
       } else {
-        debugPrint('⚠️ No userId found in AuthState');
+        debugPrint('⚠️ No driverId or districtId found in state');
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error loading active route: $e');

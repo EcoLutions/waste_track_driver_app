@@ -1,13 +1,11 @@
 import 'package:logger/logger.dart';
 import 'package:waste_track_driver_app/entities/container/api/repositories/container_repository.dart';
 import 'package:waste_track_driver_app/entities/route/api/repositories/route_repository.dart';
-import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
 import 'package:waste_track_driver_app/entities/waypoint/api/repositories/waypoint_repository.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_data.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_repository.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
 import 'package:waste_track_driver_app/shared/lib/utils/resource.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_route_repository.dart';
 
 class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   RouteAssignmentRepositoryImpl({
@@ -24,40 +22,29 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   final Logger _logger = Logger();
 
   @override
-  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver(
-      String driverId,
-      ) async {
-    _logger.i('🔍 Loading active route for driver: $driverId');
+  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver({
+    required String driverId,
+    required String districtId,
+  }) async {
+    _logger.i('🔍 Loading active route for driver: $driverId in district: $districtId');
 
-    // ✅ NUEVO: Si estamos usando mock, asegurar que existen datos
-    if (_routeRepository is MockRouteRepository) {
-      (_routeRepository as MockRouteRepository).ensureRouteForDriver(driverId);
-    }
-
-    final routesResult = await _routeRepository.getAll();
+    final routesResult = await _routeRepository.getActiveByDistrictId(districtId);
 
     switch (routesResult) {
       case Success(data: final routes):
-        _logger.i('📋 Found ${routes.length} total routes');
+        _logger.i('📋 Found ${routes.length} active routes in district');
 
-        // Debug: Imprimir todas las rutas
-        for (final route in routes) {
-          _logger.d('   Route ${route.id}: driver=${route.driverId}, status=${route.status}');
-        }
-
+        // Filtrar por el driverId específico
         try {
           final activeRoute = routes.firstWhere(
-                (route) =>
-            route.driverId == driverId &&
-                (route.status == RouteStatus.assigned ||
-                    route.status == RouteStatus.inProgress),
+                (route) => route.driverId == driverId,
           );
 
-          _logger.i('✅ Found active route: ${activeRoute.id}');
+          _logger.i('✅ Found active route for driver: ${activeRoute.id}');
           return _loadRouteData(activeRoute.id);
 
         } catch (e) {
-          _logger.i('ℹ️ No active route found for driver $driverId');
+          _logger.i('ℹ️ No active route found for driver $driverId in district $districtId');
           return const Failure(
             message: 'No active route found',
             statusCode: 404,

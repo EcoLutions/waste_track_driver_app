@@ -94,14 +94,18 @@ class RouteAssignedCard extends StatelessWidget {
             _buildInfoRow(
               Icons.route_outlined,
               'Distancia estimada',
-              route.formattedTotalDistance,
+              route.totalDistance > 0 
+                  ? route.formattedTotalDistance 
+                  : 'Por calcular',
               theme,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.timer_outlined,
               'Duración estimada',
-              route.formattedEstimatedDuration,
+              route.estimatedDuration > Duration.zero
+                  ? route.formattedEstimatedDuration
+                  : 'Por calcular',
               theme,
             ),
 

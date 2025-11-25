@@ -6,6 +6,7 @@ import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.d
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository_impl.dart';
 import 'package:waste_track_driver_app/entities/container/api/repositories/container_repository.dart';
+import 'package:waste_track_driver_app/entities/container/api/repositories/container_repository_impl.dart';
 import 'package:waste_track_driver_app/entities/container/api/services/container_service.dart';
 import 'package:waste_track_driver_app/entities/container/api/services/container_service_impl.dart';
 import 'package:waste_track_driver_app/entities/district/district.dart';
@@ -14,11 +15,13 @@ import 'package:waste_track_driver_app/entities/driver/api/repositories/driver_r
 import 'package:waste_track_driver_app/entities/driver/api/services/driver_service.dart';
 import 'package:waste_track_driver_app/entities/driver/api/services/driver_service_impl.dart';
 import 'package:waste_track_driver_app/entities/route/api/repositories/route_repository.dart';
+import 'package:waste_track_driver_app/entities/route/api/repositories/route_repository_impl.dart';
 import 'package:waste_track_driver_app/entities/route/api/services/route_service.dart';
 import 'package:waste_track_driver_app/entities/route/api/services/route_service_impl.dart';
 import 'package:waste_track_driver_app/entities/user/user.dart';
 import 'package:waste_track_driver_app/entities/user_profile/user_profile.dart';
 import 'package:waste_track_driver_app/entities/waypoint/api/repositories/waypoint_repository.dart';
+import 'package:waste_track_driver_app/entities/waypoint/api/repositories/waypoint_repository_impl.dart';
 import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_service.dart';
 import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_service_impl.dart';
 import 'package:waste_track_driver_app/features/authentication/api/auth_service_imp.dart';
@@ -29,9 +32,6 @@ import 'package:waste_track_driver_app/features/route_assignment/model/route_ass
 import 'package:waste_track_driver_app/shared/api/dio_client.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/local_storage_service.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/secure_storage_service.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_container_repository.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_route_repository.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_waypoint_repository.dart';
 import 'package:waste_track_driver_app/shared/services/directions_service.dart';
 import 'package:waste_track_driver_app/shared/services/location_service.dart';
 
@@ -107,9 +107,9 @@ Future<void> init() async {
         () => RouteServiceImpl(sl<DioClient>()),
   );
 
-  // Route Repository - USING MOCK FOR DEMO
+  // Route Repository
   sl.registerLazySingleton<RouteRepository>(
-        () => MockRouteRepository(),
+        () => RouteRepositoryImpl(sl<RouteService>()),
   );
 
   // ==================== ENTITIES - WAYPOINT ====================
@@ -119,9 +119,9 @@ Future<void> init() async {
         () => WayPointServiceImpl(sl<DioClient>()),
   );
 
-  // WayPoint Repository - USING MOCK FOR DEMO
+  // WayPoint Repository
   sl.registerLazySingleton<WayPointRepository>(
-        () => MockWayPointRepository(sl<RouteRepository>() as MockRouteRepository),
+        () => WayPointRepositoryImpl(sl<WayPointService>()),
   );
 
   // ==================== ENTITIES - CONTAINER ====================
@@ -131,9 +131,9 @@ Future<void> init() async {
         () => ContainerServiceImpl(sl<DioClient>()),
   );
 
-  // Container Repository - USING MOCK FOR DEMO
+  // Container Repository
   sl.registerLazySingleton<ContainerRepository>(
-        () => MockContainerRepository(sl<RouteRepository>() as MockRouteRepository),
+        () => ContainerRepositoryImpl(sl<ContainerService>()),
   );
 
   // ==================== APP BLOCS ====================
@@ -170,6 +170,7 @@ Future<void> init() async {
       userService: sl(),
       userProfileService: sl(),
       districtService: sl(),
+      driverRepository: sl(),
     ),
   );
 

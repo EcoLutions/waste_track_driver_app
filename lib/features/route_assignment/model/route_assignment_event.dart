@@ -8,12 +8,16 @@ sealed class RouteAssignmentEvent extends Equatable {
 }
 
 final class LoadActiveRoute extends RouteAssignmentEvent {
-  const LoadActiveRoute({required this.driverId});
+  const LoadActiveRoute({
+    required this.driverId,
+    required this.districtId,
+  });
 
   final String driverId;
+  final String districtId;
 
   @override
-  List<Object?> get props => [driverId];
+  List<Object?> get props => [driverId, districtId];
 }
 
 final class RefreshRoute extends RouteAssignmentEvent {
