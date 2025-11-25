@@ -5,14 +5,35 @@ import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_repository_impl.dart';
+import 'package:waste_track_driver_app/entities/container/api/repositories/container_repository.dart';
+import 'package:waste_track_driver_app/entities/container/api/services/container_service.dart';
+import 'package:waste_track_driver_app/entities/container/api/services/container_service_impl.dart';
 import 'package:waste_track_driver_app/entities/district/district.dart';
+import 'package:waste_track_driver_app/entities/driver/api/repositories/driver_repository.dart';
+import 'package:waste_track_driver_app/entities/driver/api/repositories/driver_repository_impl.dart';
+import 'package:waste_track_driver_app/entities/driver/api/services/driver_service.dart';
+import 'package:waste_track_driver_app/entities/driver/api/services/driver_service_impl.dart';
+import 'package:waste_track_driver_app/entities/route/api/repositories/route_repository.dart';
+import 'package:waste_track_driver_app/entities/route/api/services/route_service.dart';
+import 'package:waste_track_driver_app/entities/route/api/services/route_service_impl.dart';
 import 'package:waste_track_driver_app/entities/user/user.dart';
 import 'package:waste_track_driver_app/entities/user_profile/user_profile.dart';
+import 'package:waste_track_driver_app/entities/waypoint/api/repositories/waypoint_repository.dart';
+import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_service.dart';
+import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_service_impl.dart';
 import 'package:waste_track_driver_app/features/authentication/api/auth_service_imp.dart';
 import 'package:waste_track_driver_app/features/authentication/authentication.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_repository.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_repository_impl.dart';
 import 'package:waste_track_driver_app/shared/api/dio_client.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/local_storage_service.dart';
 import 'package:waste_track_driver_app/shared/lib/storage/secure_storage_service.dart';
+import 'package:waste_track_driver_app/shared/mock/mock_container_repository.dart';
+import 'package:waste_track_driver_app/shared/mock/mock_route_repository.dart';
+import 'package:waste_track_driver_app/shared/mock/mock_waypoint_repository.dart';
+import 'package:waste_track_driver_app/shared/services/directions_service.dart';
+import 'package:waste_track_driver_app/shared/services/location_service.dart';
 
 final sl = GetIt.instance;
 
@@ -67,19 +88,74 @@ Future<void> init() async {
         () => DistrictServiceImpl(sl<DioClient>()),
   );
 
-// ==================== APP BLOCS ====================
-// AuthBloc (global)
+  // ==================== ENTITIES - DRIVER ====================
+
+  // Driver Service
+  sl.registerLazySingleton<DriverService>(
+        () => DriverServiceImpl(sl<DioClient>()),
+  );
+
+  // Driver Repository
+  sl.registerLazySingleton<DriverRepository>(
+        () => DriverRepositoryImpl(sl<DriverService>()),
+  );
+
+  // ==================== ENTITIES - ROUTE ====================
+
+  // Route Service
+  sl.registerLazySingleton<RouteService>(
+        () => RouteServiceImpl(sl<DioClient>()),
+  );
+
+  // Route Repository - USING MOCK FOR DEMO
+  sl.registerLazySingleton<RouteRepository>(
+        () => MockRouteRepository(),
+  );
+
+  // ==================== ENTITIES - WAYPOINT ====================
+
+  // WayPoint Service
+  sl.registerLazySingleton<WayPointService>(
+        () => WayPointServiceImpl(sl<DioClient>()),
+  );
+
+  // WayPoint Repository - USING MOCK FOR DEMO
+  sl.registerLazySingleton<WayPointRepository>(
+        () => MockWayPointRepository(sl<RouteRepository>() as MockRouteRepository),
+  );
+
+  // ==================== ENTITIES - CONTAINER ====================
+
+  // Container Service
+  sl.registerLazySingleton<ContainerService>(
+        () => ContainerServiceImpl(sl<DioClient>()),
+  );
+
+  // Container Repository - USING MOCK FOR DEMO
+  sl.registerLazySingleton<ContainerRepository>(
+        () => MockContainerRepository(sl<RouteRepository>() as MockRouteRepository),
+  );
+
+  // ==================== APP BLOCS ====================
+
+  // AuthBloc (global)
   sl.registerFactory<AuthBloc>(
         () => AuthBloc(authRepository: sl()),
   );
 
-// UserSessionBloc (global)
+  // UserSessionBloc (global)
   sl.registerFactory<UserSessionBloc>(
         () => UserSessionBloc(userSessionRepository: sl()),
   );
 
-// ==================== REPOSITORIES ====================
-// AuthRepository
+  // RouteAssignmentBloc
+  sl.registerFactory<RouteAssignmentBloc>(
+        () => RouteAssignmentBloc(routeAssignmentRepository: sl()),
+  );
+
+  // ==================== REPOSITORIES ====================
+
+  // AuthRepository
   sl.registerLazySingleton<AuthRepository>(
         () => AuthRepositoryImpl(
       authService: sl(),
@@ -88,7 +164,7 @@ Future<void> init() async {
     ),
   );
 
-// UserSessionRepository
+  // UserSessionRepository
   sl.registerLazySingleton<UserSessionRepository>(
         () => UserSessionRepositoryImpl(
       userService: sl(),
@@ -97,9 +173,29 @@ Future<void> init() async {
     ),
   );
 
-// ==================== SERVICES ====================
-// AuthService
+  // RouteAssignmentRepository
+  sl.registerLazySingleton<RouteAssignmentRepository>(
+        () => RouteAssignmentRepositoryImpl(
+      routeRepository: sl(),
+      wayPointRepository: sl(),
+      containerRepository: sl(),
+    ),
+  );
+
+  // ==================== SERVICES ====================
+
+  // AuthService
   sl.registerLazySingleton<AuthService>(
         () => AuthServiceImpl(sl()),
+  );
+
+  // LocationService
+  sl.registerLazySingleton<LocationService>(
+        () => LocationService(),
+  );
+
+  // DirectionsService
+  sl.registerLazySingleton<DirectionsService>(
+        () => DirectionsService(),
   );
 }

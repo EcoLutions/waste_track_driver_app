@@ -2,373 +2,259 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_event.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
-import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
-import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
-import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/app/theme/app_text_styles.dart';
+import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
+import 'package:waste_track_driver_app/pages/home/ui/route_assigned_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('🏠 HomePage - initState');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadActiveRoute();
+    });
+  }
+
+  void _loadActiveRoute() {
+    debugPrint('🏠 HomePage - _loadActiveRoute called');
+    try {
+      final authState = context.read<AuthBloc>().state;
+      debugPrint('🏠 Auth State: ${authState.runtimeType}');
+      debugPrint('🏠 User ID: ${authState.userId}');
+
+      if (authState.userId != null) {
+        debugPrint('🏠 Loading route for driver: ${authState.userId}');
+        context.read<RouteAssignmentBloc>().add(
+          LoadActiveRoute(driverId: authState.userId!),
+        );
+      } else {
+        debugPrint('⚠️ No userId found in AuthState');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error loading active route: $e');
+      debugPrint('StackTrace: $stackTrace');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiBlocListener(
-        listeners: [
-          BlocListener<AuthBloc, AuthState>(
-            listener: (context, state) {
-              if (state is AuthUnauthenticated) {
-                context.go('/login');
-              }
+    debugPrint('🏠 HomePage - build');
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Inicio'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadActiveRoute,
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notificaciones - TODO')),
+              );
             },
           ),
         ],
-        child: BlocBuilder<UserSessionBloc, UserSessionState>(
-          builder: (context, state) {
-            // Si está en estado inicial (después de logout)
-            if (state is UserSessionInitial) {
-              return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
+      ),
+      body: BlocConsumer<RouteAssignmentBloc, RouteAssignmentState>(
+        listener: (context, state) {
+          debugPrint('🏠 RouteAssignment State: ${state.runtimeType}');
+
+          if (state is RouteAssignmentAssigned &&
+              state.route.status == RouteStatus.inProgress) {
+            debugPrint('🏠 Route in progress, redirecting...');
+            context.go('/route-active');
+          }
+
+          if (state is RouteAssignmentError) {
+            debugPrint('❌ RouteAssignment Error: ${state.message}');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          debugPrint('🏠 Building UI for state: ${state.runtimeType}');
+          return RefreshIndicator(
+            onRefresh: () async {
+              _loadActiveRoute();
+              await Future.delayed(const Duration(seconds: 1));
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildContent(context, state),
                 ),
-              );
-            }
-            // Si está cargando
-            if (state is UserSessionLoading) {
-              return Scaffold(
-                backgroundColor: AppColors.background,
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Cargando datos del usuario...',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-            // Si hay error
-            if (state is UserSessionError) {
-              return Scaffold(
-                backgroundColor: AppColors.background,
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: AppColors.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error al cargar datos',
-                        style: AppTextStyles.h3.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          state.message,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+  Widget _buildContent(BuildContext context, RouteAssignmentState state) {
+    return switch (state) {
+      RouteAssignmentInitial() => _buildLoadingState('Inicializando...'),
+      RouteAssignmentLoading() => _buildLoadingState('Cargando rutas...'),
+      RouteAssignmentNoRoute() => _buildNoRouteState(context),
+      RouteAssignmentAssigned(:final route, :final waypoints) =>
+          _buildRouteAssignedState(context, route, waypoints),
+      RouteAssignmentError(:final message) => _buildErrorState(context, message),
+    };
+  }
 
-            // Si los datos están cargados
-            if (state is UserSessionLoaded) {
-              final user = state.user;
-              final userProfile = state.userProfile;
-              final district = state.district;
+  Widget _buildLoadingState(String message) {
+    debugPrint('🏠 Building loading state: $message');
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
 
-              return Scaffold(
-                backgroundColor: AppColors.background,
-                appBar: AppBar(
-                  title: Text(
-                    'Inicio',
-                    style: AppTextStyles.h3.copyWith(color: AppColors.white),
-                  ),
-                  backgroundColor: AppColors.primary,
-                  elevation: 0,
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.logout, color: AppColors.white),
-                      onPressed: () {
-                        context.read<AuthBloc>().add(const LogoutRequested());
-                      },
-                    ),
-                  ],
-                ),
-                body: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header con información del usuario
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.black.withValues(alpha: 0.5),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // Avatar
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                size: 32,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // Info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.username,
-                                    style: AppTextStyles.h3.copyWith(
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user.email,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+  Widget _buildErrorState(BuildContext context, String message) {
+    debugPrint('🏠 Building error state: $message');
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error al cargar datos',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadActiveRoute,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
 
-                      const SizedBox(height: 24),
+  Widget _buildNoRouteState(BuildContext context) {
+    debugPrint('🏠 Building no route state');
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.local_shipping_outlined,
+            size: 120,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Sin rutas asignadas',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No tienes rutas programadas para hoy',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          SizedBox(
+            width: 200,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                context.go('/history');
+              },
+              icon: const Icon(Icons.history),
+              label: const Text('Ver Historial'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                      // Información básica
-                      _buildInfoSection(
-                        title: 'Información Básica',
-                        items: [
-                          _InfoItem('Rol', user.primaryRole.displayName),
-                          _InfoItem('Estado', user.status.displayName),
-                          _InfoItem('Email', user.email),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Información del perfil
-                      _buildInfoSection(
-                        title: 'Perfil de Usuario',
-                        items: [
-                          _InfoItem('ID Perfil', userProfile.id),
-                          _InfoItem('Idioma', userProfile.languageDisplayName),
-                          _InfoItem('Zona Horaria', userProfile.timezone),
-                          if (userProfile.hasPhoneNumber)
-                            _InfoItem('Teléfono', userProfile.phoneNumber!),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Información del distrito
-                      if (district != null)
-                        _buildInfoSection(
-                          title: 'Distrito Asignado',
-                          items: [
-                            _InfoItem('Nombre', district.name),
-                            _InfoItem('Código', district.code),
-                            _InfoItem('Estado', district.statusDisplayName),
-                          ],
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.grey.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'No hay distrito asignado',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 32),
-
-                      // Banner en construcción
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.construction,
-                              size: 48,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Más funcionalidades próximamente',
-                              style: AppTextStyles.h4.copyWith(
-                                color: AppColors.primary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Estamos trabajando en el sistema de rutas y recolección',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            // Estado inicial (no debería llegar aquí)
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
+  Widget _buildRouteAssignedState(
+      BuildContext context,
+      route,
+      waypoints,
+      ) {
+    debugPrint('🏠 Building route assigned state');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ruta Asignada',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        RouteAssignedCard(
+          route: route,
+          waypoints: waypoints,
+          onViewMap: () {
+            context.push('/route-map/${route.id}');
+          },
+          onViewDetails: () {
+            context.push('/route-details/${route.id}');
+          },
+          onStartRoute: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Iniciando ruta...'),
               ),
             );
           },
-        )
+        ),
+      ],
     );
   }
-
-  Widget _buildInfoSection({
-    required String title,
-    required List<_InfoItem> items,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.h4.copyWith(
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...items.map((item) {
-            final isLast = items.last == item;
-            return Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.label,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Flexible(
-                      child: Text(
-                        item.value,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
-                ),
-                if (!isLast) ...[
-                  const SizedBox(height: 12),
-                  Divider(
-                    color: AppColors.grey.withValues(alpha: 0.2),
-                    height: 1,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoItem {
-
-  _InfoItem(this.label, this.value);
-  final String label;
-  final String value;
 }
