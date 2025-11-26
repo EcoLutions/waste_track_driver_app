@@ -75,7 +75,7 @@ class RouteServiceImpl implements RouteService {
   Future<Resource<RouteResponse>> generateOptimizedWaypoints(String id) async {
     return _dioClient.handleRequest(
           () => _dioClient.dio.post(
-        '${ApiConstants.baseUrl}/routes/$id/generate-optimized-waypoints',
+        '${ApiConstants.baseUrl}/routes/$id/generate-waypoints',
       ),
           (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
     );
