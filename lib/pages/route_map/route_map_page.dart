@@ -302,16 +302,16 @@ class _RouteMapPageState extends State<RouteMapPage> {
   void _markWaypointAsCollected(WayPointWithContainer waypoint) {
     print('✅ Marking waypoint as collected: ${waypoint.wayPoint.id}');
 
+    // Disparar el evento para marcar como visitado en el backend
+    context.read<RouteAssignmentBloc>().add(
+      MarkWaypointAsVisited(waypointId: waypoint.wayPoint.id),
+    );
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Punto ${waypoint.wayPoint.sequenceOrder} marcado como recolectado'),
         backgroundColor: AppColors.success,
       ),
-    );
-
-    // Recargar la ruta para actualizar el estado
-    context.read<RouteAssignmentBloc>().add(
-      const RefreshRoute(),
     );
   }
 
