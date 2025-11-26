@@ -183,7 +183,15 @@ class _RouteMapPageState extends State<RouteMapPage> {
       final waypoint = state.waypoints[i];
       final container = waypoint.container;
 
-      print('📍 Adding waypoint marker ${i + 1}: ${container.latitude}, ${container.longitude}');
+      print('📍 Adding waypoint marker ${i + 1}:');
+      print('   - Waypoint ID: ${waypoint.wayPoint.id}');
+      print('   - Container ID: ${container.id}');
+      print('   - Sequence: ${waypoint.wayPoint.sequenceOrder}');
+      print('   - Latitude: ${container.latitude}');
+      print('   - Longitude: ${container.longitude}');
+      print('   - Type: ${container.containerType.displayName}');
+      print('   - Fill: ${container.fillPercentage.toStringAsFixed(1)}%');
+      print('   - Status: ${waypoint.wayPoint.status}');
 
       markers.add(
         Marker(
@@ -192,7 +200,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
           icon: _getMarkerIcon(waypoint.wayPoint.status),
           onTap: () => _onWaypointTap(waypoint),
           infoWindow: InfoWindow(
-            title: 'Punto ${i + 1}',
+            title: 'Punto ${waypoint.wayPoint.sequenceOrder}',
             snippet: container.containerType.displayName,
           ),
         ),

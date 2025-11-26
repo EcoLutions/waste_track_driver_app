@@ -3,8 +3,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
+import 'package:waste_track_driver_app/shared/services/geocoding_service.dart';
 
-class WaypointBottomSheet extends StatelessWidget {
+class WaypointBottomSheet extends StatefulWidget {
   final WayPointWithContainer waypoint;
   final Position? currentPosition;
   final VoidCallback onMarkAsCollected;
@@ -17,9 +18,38 @@ class WaypointBottomSheet extends StatelessWidget {
   });
 
   @override
+  State<WaypointBottomSheet> createState() => _WaypointBottomSheetState();
+}
+
+class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
+  final GeocodingService _geocodingService = GeocodingService();
+  String? _address;
+  bool _loadingAddress = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddress();
+  }
+
+  Future<void> _loadAddress() async {
+    final address = await _geocodingService.getShortAddress(
+      latitude: widget.waypoint.container.latitude,
+      longitude: widget.waypoint.container.longitude,
+    );
+
+    if (mounted) {
+      setState(() {
+        _address = address;
+        _loadingAddress = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final container = waypoint.container;
-    final waypointData = waypoint.wayPoint;
+    final container = widget.waypoint.container;
+    final waypointData = widget.waypoint.wayPoint;
     final fillPercentage = container.fillPercentage;
 
     return Container(
@@ -97,7 +127,9 @@ class WaypointBottomSheet extends StatelessWidget {
           _buildInfoRow(
             Icons.map_outlined,
             'Dirección',
-            'Av. Larco ${waypointData.sequenceOrder}34, Miraflores',
+            _loadingAddress
+                ? 'Cargando...'
+                : _address ?? 'Lat: ${container.latitude.toStringAsFixed(6)}, Lng: ${container.longitude.toStringAsFixed(6)}',
           ),
 
           const SizedBox(height: 16),
@@ -119,7 +151,7 @@ class WaypointBottomSheet extends StatelessWidget {
             '${container.volumeLiters}L / ${container.maxWeightKg}kg',
           ),
 
-          if (currentPosition != null) ...[
+          if (widget.currentPosition != null) ...[
             const SizedBox(height: 16),
             _buildInfoRow(
               Icons.navigation,
@@ -148,7 +180,7 @@ class WaypointBottomSheet extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: waypointData.isCompleted ? null : onMarkAsCollected,
+                  onPressed: waypointData.isCompleted ? null : widget.onMarkAsCollected,
                   icon: Icon(
                     waypointData.isCompleted
                         ? Icons.check_circle
@@ -267,13 +299,13 @@ class WaypointBottomSheet extends StatelessWidget {
   }
 
   String _calculateDistance() {
-    if (currentPosition == null) return 'N/A';
+    if (widget.currentPosition == null) return 'N/A';
 
     final distance = Geolocator.distanceBetween(
-      currentPosition!.latitude,
-      currentPosition!.longitude,
-      waypoint.container.latitude,
-      waypoint.container.longitude,
+      widget.currentPosition!.latitude,
+      widget.currentPosition!.longitude,
+      widget.waypoint.container.latitude,
+      widget.waypoint.container.longitude,
     );
 
     if (distance < 1000) {
@@ -284,8 +316,8 @@ class WaypointBottomSheet extends StatelessWidget {
   }
 
   Future<void> _openInMaps(BuildContext context) async {
-    final lat = waypoint.container.latitude;
-    final lng = waypoint.container.longitude;
+    final lat = widget.waypoint.container.latitude;
+    final lng = widget.waypoint.container.longitude;
     final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
 
     if (await canLaunchUrl(url)) {
