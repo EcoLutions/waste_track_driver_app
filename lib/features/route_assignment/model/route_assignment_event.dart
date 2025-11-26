@@ -27,3 +27,12 @@ final class RefreshRoute extends RouteAssignmentEvent {
 final class ClearRoute extends RouteAssignmentEvent {
   const ClearRoute();
 }
+
+final class GenerateWaypoints extends RouteAssignmentEvent {
+  const GenerateWaypoints({required this.routeId});
+
+  final String routeId;
+
+  @override
+  List<Object?> get props => [routeId];
+}

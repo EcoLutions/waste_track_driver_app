@@ -64,6 +64,25 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
     return _loadRouteData(routeId);
   }
 
+  @override
+  Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId) async {
+    _logger.i('🗺️ Generating optimized waypoints for route: $routeId');
+    
+    // Llamar al endpoint para generar waypoints
+    final result = await _routeRepository.generateOptimizedWaypoints(routeId);
+    
+    switch (result) {
+      case Success():
+        _logger.i('✅ Waypoints generated, reloading route data');
+        // Recargar todos los datos (route, waypoints, containers)
+        return _loadRouteData(routeId);
+        
+      case Failure(message: final msg, statusCode: final code):
+        _logger.e('❌ Failed to generate waypoints: $msg');
+        return Failure(message: msg, statusCode: code);
+    }
+  }
+
   Future<Resource<RouteAssignmentData>> _loadRouteData(String routeId) async {
     _logger.i('📦 Loading route data for: $routeId');
 

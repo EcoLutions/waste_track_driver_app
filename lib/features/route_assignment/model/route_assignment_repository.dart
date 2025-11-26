@@ -7,4 +7,5 @@ abstract class RouteAssignmentRepository {
     required String districtId,
   });
   Future<Resource<RouteAssignmentData>> refreshRoute(String routeId);
+  Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId);
 }

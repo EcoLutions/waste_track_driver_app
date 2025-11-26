@@ -14,6 +14,7 @@ class RouteAssignmentBloc
     on<LoadActiveRoute>(_onLoadActiveRoute);
     on<RefreshRoute>(_onRefreshRoute);
     on<ClearRoute>(_onClearRoute);
+    on<GenerateWaypoints>(_onGenerateWaypoints);
   }
 
   final RouteAssignmentRepository _routeAssignmentRepository;
@@ -120,5 +121,44 @@ class RouteAssignmentBloc
     _logger.i('🧹 Clearing route');
     _currentRouteId = null;
     emit(const RouteAssignmentState.noRoute());
+  }
+
+  // ==================== GENERATE WAYPOINTS ====================
+
+  Future<void> _onGenerateWaypoints(
+      GenerateWaypoints event,
+      Emitter<RouteAssignmentState> emit,
+      ) async {
+    _logger.i('🗺️ Generating optimized waypoints for route: ${event.routeId}');
+    emit(const RouteAssignmentState.loading());
+
+    try {
+      final result =
+          await _routeAssignmentRepository.generateOptimizedWaypoints(event.routeId);
+
+      switch (result) {
+        case Success(data: final routeData):
+          _currentRouteId = routeData.route.id;
+          _logger.i('✅ Waypoints generated successfully');
+          _logger.i('📍 Total waypoints: ${routeData.totalWaypoints}');
+          _logger.i('📏 Distance: ${routeData.route.formattedTotalDistance}');
+          _logger.i('⏱️ Duration: ${routeData.route.formattedEstimatedDuration}');
+
+          emit(RouteAssignmentState.routeAssigned(
+            route: routeData.route,
+            waypoints: routeData.wayPointsWithContainers,
+          ));
+          break;
+
+        case Failure(message: final msg):
+          _logger.e('❌ Error generating waypoints: $msg');
+          emit(RouteAssignmentState.error(msg));
+          break;
+      }
+    } catch (e, stackTrace) {
+      _logger.e('💥 Exception in _onGenerateWaypoints: $e');
+      _logger.e('StackTrace: $stackTrace');
+      emit(RouteAssignmentState.error('Error inesperado: $e'));
+    }
   }
 }
