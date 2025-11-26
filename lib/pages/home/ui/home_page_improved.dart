@@ -19,6 +19,8 @@ class HomePageImproved extends StatefulWidget {
 }
 
 class _HomePageImprovedState extends State<HomePageImproved> {
+  bool _isGeneratingWaypoints = false;
+
   @override
   void initState() {
     super.initState();
@@ -47,86 +49,100 @@ class _HomePageImprovedState extends State<HomePageImproved> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            _loadActiveRoute();
-            await Future.delayed(const Duration(seconds: 1));
+        child: BlocListener<RouteAssignmentBloc, RouteAssignmentState>(
+          listener: (context, state) {
+            // Navegar automáticamente al mapa cuando se generan los waypoints
+            if (state is RouteAssignmentAssigned && _isGeneratingWaypoints) {
+              _isGeneratingWaypoints = false;
+              debugPrint('🗺️ Waypoints generated, navigating to map...');
+              context.push('/route-map/${state.route.id}');
+            }
           },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header con saludo
-                BlocBuilder<UserSessionBloc, UserSessionState>(
-                  builder: (context, state) {
-                    final name = state is UserSessionLoaded
-                        ? (state.driver?.firstName ?? 'Conductor')
-                        : 'Conductor';
-                    return GreetingHeader(
-                      driverName: name,
-                      onNotificationTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Notificaciones - Próximamente')),
-                        );
-                      },
-                    );
-                  },
-                ),
-
-                // Estadísticas rápidas
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: QuickStatsCard(),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Título de sección
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'Estado de Ruta',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Estado de ruta (tarjeta de error o "Sin rutas")
-                BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
-                  builder: (context, state) {
-                    return _buildRouteStatus(context, state);
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Card de ruta activa (se mueve con el scroll)
-                BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
-                  builder: (context, state) {
-                    if (state is RouteAssignmentAssigned) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ActiveRouteModal(
-                          route: state.route,
-                          waypoints: state.waypoints,
-                          onTap: () {
-                            // Navegar al mapa de ruta
-                            context.push('/route-map/${state.route.id}');
-                          },
-                        ),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              _loadActiveRoute();
+              await Future.delayed(const Duration(seconds: 1));
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header con saludo
+                  BlocBuilder<UserSessionBloc, UserSessionState>(
+                    builder: (context, state) {
+                      final name = state is UserSessionLoaded
+                          ? (state.driver?.firstName ?? 'Conductor')
+                          : 'Conductor';
+                      return GreetingHeader(
+                        driverName: name,
+                        onNotificationTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Notificaciones - Próximamente')),
+                          );
+                        },
                       );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
+                    },
+                  ),
 
-                const SizedBox(height: 24),
-              ],
+                  // Estadísticas rápidas
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: QuickStatsCard(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Título de sección
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Estado de Ruta',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Estado de ruta (tarjeta de error o "Sin rutas")
+                  BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
+                    builder: (context, state) {
+                      return _buildRouteStatus(context, state);
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Card de ruta activa (se mueve con el scroll)
+                  BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
+                    builder: (context, state) {
+                      if (state is RouteAssignmentAssigned) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ActiveRouteModal(
+                            route: state.route,
+                            waypoints: state.waypoints,
+                            onTap: () {
+                              // Navegar al mapa de ruta
+                              context.push('/route-map/${state.route.id}');
+                            },
+                            onStartRoute: () {
+                              // Marcar que estamos generando waypoints
+                              _isGeneratingWaypoints = true;
+                            },
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/entities/route/model/entities/route.dart' as rt;
 import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
 
 /// Modal flotante estilo Uber que aparece en la parte inferior de la pantalla
@@ -11,12 +14,14 @@ class ActiveRouteModal extends StatelessWidget {
   final rt.Route route;
   final List<WayPointWithContainer> waypoints;
   final VoidCallback onTap;
+  final VoidCallback? onStartRoute;
 
   const ActiveRouteModal({
     super.key,
     required this.route,
     required this.waypoints,
     required this.onTap,
+    this.onStartRoute,
   });
 
   @override
@@ -171,33 +176,48 @@ class ActiveRouteModal extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // CTA Button
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.map,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            route.status == RouteStatus.inProgress
-                                ? 'Ver Mapa de Ruta'
-                                : 'Iniciar Ruta',
-                            style: const TextStyle(
+                    GestureDetector(
+                      onTap: () {
+                        if (route.status == RouteStatus.assigned) {
+                          // Notificar que se va a iniciar la ruta
+                          onStartRoute?.call();
+                          // Si la ruta está asignada, generar waypoints optimizados
+                          context.read<RouteAssignmentBloc>().add(
+                            GenerateWaypoints(routeId: route.id),
+                          );
+                        } else {
+                          // Si ya está en progreso, navegar al mapa
+                          onTap();
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.map,
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              size: 20,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              route.status == RouteStatus.inProgress
+                                  ? 'Ver Mapa de Ruta'
+                                  : 'Iniciar Ruta',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
