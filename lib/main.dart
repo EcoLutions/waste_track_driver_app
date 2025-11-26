@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_event.dart';
@@ -10,9 +11,10 @@ import 'package:waste_track_driver_app/app/di/injection_container.dart' as di;
 import 'package:waste_track_driver_app/app/router/app_router.dart';
 import 'package:waste_track_driver_app/app/theme/app_theme.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-
+  
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await di.init();
   runApp(const EcoLutionsDriverApp());
 }
