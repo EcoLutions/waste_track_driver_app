@@ -49,15 +49,28 @@ class _HomePageImprovedState extends State<HomePageImproved> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: BlocListener<RouteAssignmentBloc, RouteAssignmentState>(
-          listener: (context, state) {
-            // Navegar automáticamente al mapa cuando se generan los waypoints
-            if (state is RouteAssignmentAssigned && _isGeneratingWaypoints) {
-              _isGeneratingWaypoints = false;
-              debugPrint('🗺️ Waypoints generated, navigating to map...');
-              context.push('/route-map/${state.route.id}');
-            }
-          },
+        child: MultiBlocListener(
+          listeners: [
+            // Listener para UserSessionBloc: cargar ruta cuando se cargue la sesión
+            BlocListener<UserSessionBloc, UserSessionState>(
+              listener: (context, state) {
+                if (state is UserSessionLoaded) {
+                  debugPrint('✅ User session loaded, loading active route...');
+                  _loadActiveRoute();
+                }
+              },
+            ),
+            // Listener para RouteAssignmentBloc: navegar al mapa cuando se generen waypoints
+            BlocListener<RouteAssignmentBloc, RouteAssignmentState>(
+              listener: (context, state) {
+                if (state is RouteAssignmentAssigned && _isGeneratingWaypoints) {
+                  _isGeneratingWaypoints = false;
+                  debugPrint('🗺️ Waypoints generated, navigating to map...');
+                  context.push('/route-map/${state.route.id}');
+                }
+              },
+            ),
+          ],
           child: RefreshIndicator(
             onRefresh: () async {
               _loadActiveRoute();

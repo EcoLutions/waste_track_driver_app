@@ -385,27 +385,10 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   ),
                 ),
 
-              // Botón de regresar
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black),
-                      onPressed: () {
-                        print('⬅️ Back button pressed');
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-
               // Card de progreso de ruta
               if (state is RouteAssignmentAssigned)
                 Positioned(
-                  top: 80,
+                  top: 60,
                   left: 16,
                   right: 16,
                   child: RouteProgressCard(
@@ -413,6 +396,22 @@ class _RouteMapPageState extends State<RouteMapPage> {
                     waypoints: state.waypoints,
                   ),
                 ),
+
+              // Botón de regresar (debajo de la card)
+              Positioned(
+                top: 200,
+                left: 16,
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () {
+                      print('⬅️ Back button pressed');
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ),
             ],
           );
         },
