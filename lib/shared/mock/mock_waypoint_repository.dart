@@ -85,6 +85,15 @@ class MockWayPointRepository implements WayPointRepository {
     return const Success(null);
   }
 
+  @override
+  Future<Resource<WayPoint>> markAsVisited(String id, String routeId) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    // Buscar el waypoint y retornarlo (en mock no modificamos realmente el estado)
+    final result = await getById(id);
+    return result;
+  }
+
   List<dynamic> _getAllRouteData() {
     return _routeRepository.getAllRouteData();
   }
