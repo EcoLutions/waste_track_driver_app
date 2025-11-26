@@ -27,8 +27,8 @@ sealed class Container with _$Container {
   const Container._();
 
   double get fillPercentage {
-    if (volumeLiters == 0) return 0;
-    return (currentFillLevel / volumeLiters) * 100;
+    // currentFillLevel ya viene en porcentaje desde el backend
+    return currentFillLevel.toDouble();
   }
 
   bool get requiresCollection {
