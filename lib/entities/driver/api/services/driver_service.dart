@@ -7,6 +7,7 @@ abstract class DriverService {
   Future<Resource<DriverResponse>> getById(String id);
   Future<Resource<List<DriverResponse>>> getAll();
   Future<Resource<List<DriverResponse>>> getAllByDistrictId(String districtId);
+  Future<Resource<DriverResponse>> getCurrentDriver();
   Future<Resource<DriverResponse>> create(CreateDriverRequest request);
   Future<Resource<DriverResponse>> update(UpdateDriverRequest request);
   Future<Resource<void>> delete(String id);
