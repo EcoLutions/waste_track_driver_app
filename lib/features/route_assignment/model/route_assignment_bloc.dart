@@ -15,6 +15,7 @@ class RouteAssignmentBloc
     on<RefreshRoute>(_onRefreshRoute);
     on<ClearRoute>(_onClearRoute);
     on<GenerateWaypoints>(_onGenerateWaypoints);
+    on<MarkWaypointAsVisited>(_onMarkWaypointAsVisited);
   }
 
   final RouteAssignmentRepository _routeAssignmentRepository;
@@ -157,6 +158,47 @@ class RouteAssignmentBloc
       }
     } catch (e, stackTrace) {
       _logger.e('💥 Exception in _onGenerateWaypoints: $e');
+      _logger.e('StackTrace: $stackTrace');
+      emit(RouteAssignmentState.error('Error inesperado: $e'));
+    }
+  }
+
+  // ==================== MARK WAYPOINT AS VISITED ====================
+
+  Future<void> _onMarkWaypointAsVisited(
+    MarkWaypointAsVisited event,
+    Emitter<RouteAssignmentState> emit,
+  ) async {
+    _logger.i('✅ Marking waypoint as visited: ${event.waypointId}');
+
+    if (_currentRouteId == null) {
+      _logger.w('⚠️ Cannot mark waypoint: no current route');
+      return;
+    }
+
+    try {
+      final result = await _routeAssignmentRepository.markWaypointAsVisited(
+        event.waypointId,
+        _currentRouteId!,
+      );
+
+      switch (result) {
+        case Success(data: final routeData):
+          _logger.i('✅ Waypoint marked as visited successfully');
+
+          emit(RouteAssignmentState.routeAssigned(
+            route: routeData.route,
+            waypoints: routeData.wayPointsWithContainers,
+          ));
+          break;
+
+        case Failure(message: final msg):
+          _logger.e('❌ Error marking waypoint as visited: $msg');
+          emit(RouteAssignmentState.error(msg));
+          break;
+      }
+    } catch (e, stackTrace) {
+      _logger.e('💥 Exception in _onMarkWaypointAsVisited: $e');
       _logger.e('StackTrace: $stackTrace');
       emit(RouteAssignmentState.error('Error inesperado: $e'));
     }

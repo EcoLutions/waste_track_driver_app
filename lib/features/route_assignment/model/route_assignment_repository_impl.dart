@@ -83,6 +83,25 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
     }
   }
 
+  @override
+  Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId) async {
+    _logger.i('✅ Marking waypoint as visited: $waypointId');
+    
+    // Llamar al endpoint para marcar como visitado (pasando routeId)
+    final result = await _wayPointRepository.markAsVisited(waypointId, routeId);
+    
+    switch (result) {
+      case Success():
+        _logger.i('✅ Waypoint marked as visited, reloading route data');
+        // Recargar todos los datos para reflejar el cambio
+        return _loadRouteData(routeId);
+        
+      case Failure(message: final msg, statusCode: final code):
+        _logger.e('❌ Failed to mark waypoint as visited: $msg');
+        return Failure(message: msg, statusCode: code);
+    }
+  }
+
   Future<Resource<RouteAssignmentData>> _loadRouteData(String routeId) async {
     _logger.i('📦 Loading route data for: $routeId');
 

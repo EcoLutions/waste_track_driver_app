@@ -36,3 +36,12 @@ final class GenerateWaypoints extends RouteAssignmentEvent {
   @override
   List<Object?> get props => [routeId];
 }
+
+final class MarkWaypointAsVisited extends RouteAssignmentEvent {
+  const MarkWaypointAsVisited({required this.waypointId});
+
+  final String waypointId;
+
+  @override
+  List<Object?> get props => [waypointId];
+}
