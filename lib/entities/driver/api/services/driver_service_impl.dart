@@ -42,6 +42,14 @@ class DriverServiceImpl implements DriverService {
   }
 
   @override
+  Future<Resource<DriverResponse>> getCurrentDriver() async {
+    return _dioClient.handleRequest(
+      () => _dioClient.dio.get('${ApiConstants.baseUrl}/drivers/me'),
+      (data) => DriverResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  @override
   Future<Resource<DriverResponse>> create(CreateDriverRequest request) async {
     return _dioClient.handleRequest(
       () => _dioClient.dio.post(

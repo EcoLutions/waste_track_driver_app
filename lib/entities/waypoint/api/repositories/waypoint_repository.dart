@@ -8,4 +8,5 @@ abstract class WayPointRepository {
   Future<Resource<WayPoint>> create(WayPoint waypoint, String routeId);
   Future<Resource<WayPoint>> update(WayPoint waypoint);
   Future<Resource<void>> delete(String id);
+  Future<Resource<WayPoint>> markAsVisited(String id, String routeId);
 }

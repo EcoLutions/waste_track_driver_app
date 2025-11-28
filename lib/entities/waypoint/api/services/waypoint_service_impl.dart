@@ -69,4 +69,18 @@ class WayPointServiceImpl implements WayPointService {
           (_) {},
     );
   }
+
+  @override
+  Future<Resource<WayPointResponse>> markAsVisited(String id, String routeId) async {
+    return _dioClient.handleRequest(
+          () => _dioClient.dio.patch(
+        '${ApiConstants.baseUrl}/waypoints/$id/mark-visited',
+        data: {
+          'routeId': routeId,
+          'arrivalTime': DateTime.now().toIso8601String(),
+        },
+      ),
+          (data) => WayPointResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

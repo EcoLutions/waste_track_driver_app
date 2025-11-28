@@ -10,4 +10,5 @@ abstract class WayPointService {
   Future<Resource<WayPointResponse>> create(CreateWayPointRequest request, String routeId);
   Future<Resource<WayPointResponse>> update(String id, UpdateWayPointRequest request);
   Future<Resource<void>> delete(String id);
+  Future<Resource<WayPointResponse>> markAsVisited(String id, String routeId);
 }

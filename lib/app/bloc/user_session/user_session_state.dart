@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:waste_track_driver_app/entities/district/district.dart';
+import 'package:waste_track_driver_app/entities/driver/driver.dart';
 import 'package:waste_track_driver_app/entities/user/user.dart';
 import 'package:waste_track_driver_app/entities/user_profile/user_profile.dart';
 
@@ -15,6 +16,7 @@ sealed class UserSessionState with _$UserSessionState {
     required User user,
     required UserProfile userProfile,
     District? district,
+    Driver? driver,
   }) = UserSessionLoaded;
 
   const factory UserSessionState.error(String message) = UserSessionError;
@@ -27,6 +29,11 @@ extension UserSessionStateX on UserSessionState {
 
   User? get user => switch (this) {
     UserSessionLoaded(user: final u) => u,
+    _ => null,
+  };
+
+  Driver? get driver => switch (this) {
+    UserSessionLoaded(driver: final d) => d,
     _ => null,
   };
 

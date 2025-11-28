@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
-import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
+import 'package:waste_track_driver_app/pages/home/ui/home_page_improved.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
+import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
+import 'package:waste_track_driver_app/pages/profile/ui/profile_page_improved.dart';
+import 'package:waste_track_driver_app/pages/route_history/ui/route_history_page_improved.dart';
+import 'package:waste_track_driver_app/pages/route_map/route_map_page.dart';
 import 'package:waste_track_driver_app/pages/splash/ui/splash_page.dart';
 
 class AppRouter {
@@ -25,16 +29,22 @@ class AppRouter {
         }
 
         if (authState is AuthAuthenticated) {
-          debugPrint('Authenticated - Redirecting to /home');
-          return currentLocation == '/home' ? null : '/home';
+          // Si está autenticado y está en splash o login, redirigir a home
+          if (currentLocation == '/splash' || currentLocation == '/login') {
+            debugPrint('Authenticated - Redirecting to /home');
+            return '/home';
+          }
+          return null;
         }
 
         if (authState is AuthUnauthenticated ||
             authState is AuthInitial ||
             authState is AuthError) {
-          return (currentLocation == '/login' || currentLocation == '/splash')
-              ? null
-              : '/login';
+          // Si no está autenticado, permitir solo splash y login
+          if (currentLocation != '/login' && currentLocation != '/splash') {
+            return '/login';
+          }
+          return null;
         }
 
         return null;
@@ -50,10 +60,71 @@ class AppRouter {
           name: 'login',
           builder: (context, state) => const LoginPage(),
         ),
+
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
+            return MainNavigationPage(navigationShell: navigationShell);
+          },
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/home',
+                  name: 'home',
+                  builder: (context, state) => const HomePageImproved(),
+                ),
+              ],
+            ),
+
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/history',
+                  name: 'history',
+                  builder: (context, state) => const RouteHistoryPageImproved(),
+                ),
+              ],
+            ),
+
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/profile',
+                  name: 'profile',
+                  builder: (context, state) => const ProfilePageImproved(),
+                ),
+              ],
+            ),
+          ],
+        ),
+
         GoRoute(
-          path: '/home',
-          name: 'home',
-          builder: (context, state) => const HomePage(),
+          path: '/route-active',
+          name: 'route-active',
+          builder: (context, state) => const Scaffold(
+            body: Center(
+              child: Text('Route Active Page - TODO'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/route-map/:id',
+          name: 'route-map',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return RouteMapPage(routeId: id);
+          },
+        ),
+        GoRoute(
+          path: '/route-details/:id',
+          name: 'route-details',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return Scaffold(
+              appBar: AppBar(title: Text('Detalles Ruta $id')),
+              body: const Center(child: Text('Route Details Page - TODO')),
+            );
+          },
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

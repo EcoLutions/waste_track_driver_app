@@ -73,4 +73,15 @@ class WayPointRepositoryImpl implements WayPointRepository {
   Future<Resource<void>> delete(String id) async {
     return _service.delete(id);
   }
+
+  @override
+  Future<Resource<WayPoint>> markAsVisited(String id, String routeId) async {
+    final result = await _service.markAsVisited(id, routeId);
+
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+          Failure(message: msg, statusCode: code),
+    };
+  }
 }

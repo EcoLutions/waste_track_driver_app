@@ -8,6 +8,8 @@ abstract class DriverRepository {
 
   Future<Resource<List<Driver>>> getAllByDistrictId(String districtId);
 
+  Future<Resource<Driver>> getCurrentDriver();
+
   Future<Resource<Driver>> create(Driver driver);
 
   Future<Resource<Driver>> update(Driver driver);

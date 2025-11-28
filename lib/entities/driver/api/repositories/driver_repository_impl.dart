@@ -47,6 +47,17 @@ class DriverRepositoryImpl implements DriverRepository {
   }
 
   @override
+  Future<Resource<Driver>> getCurrentDriver() async {
+    final result = await _service.getCurrentDriver();
+
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+        Failure(message: msg, statusCode: code),
+    };
+  }
+
+  @override
   Future<Resource<Driver>> create(Driver driver) async {
     final request = driver.toCreateRequest();
     final result = await _service.create(request);

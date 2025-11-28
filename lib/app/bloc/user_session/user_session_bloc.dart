@@ -33,6 +33,7 @@ class UserSessionBloc extends Bloc<UserSessionEvent, UserSessionState> {
           user: sessionData.user,
           userProfile: sessionData.userProfile,
           district: sessionData.district,
+          driver: sessionData.driver,
         ));
         break;
 
@@ -75,6 +76,7 @@ class UserSessionBloc extends Bloc<UserSessionEvent, UserSessionState> {
           user: currentState.user,
           userProfile: profile,
           district: district,
+          driver: currentState.driver,
         ));
         break;
 
@@ -98,6 +100,7 @@ class UserSessionBloc extends Bloc<UserSessionEvent, UserSessionState> {
       user: currentState.user,
       userProfile: event.userProfile,
       district: currentState.district,
+      driver: currentState.driver,
     ));
   }
 
