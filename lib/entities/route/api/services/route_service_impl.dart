@@ -19,9 +19,36 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<List<RouteResponse>>> getAll() async {
+  Future<Resource<List<RouteResponse>>> getAll({
+    String? districtId,
+    String? driverId,
+    String? vehicleId,
+    String? status,
+    List<String>? statuses,
+  }) async {
+    final queryParams = <String, dynamic>{};
+
+    if (districtId != null && districtId.isNotEmpty) {
+      queryParams['districtId'] = districtId;
+    }
+    if (driverId != null && driverId.isNotEmpty) {
+      queryParams['driverId'] = driverId;
+    }
+    if (vehicleId != null && vehicleId.isNotEmpty) {
+      queryParams['vehicleId'] = vehicleId;
+    }
+    if (status != null && status.isNotEmpty) {
+      queryParams['status'] = status;
+    }
+    if (statuses != null && statuses.isNotEmpty) {
+      queryParams['statuses'] = statuses;
+    }
+
     return _dioClient.handleRequest(
-          () => _dioClient.dio.get('${ApiConstants.baseUrl}/routes'),
+          () => _dioClient.dio.get(
+        '${ApiConstants.baseUrl}/routes',
+        queryParameters: queryParams,
+      ),
           (data) => (data as List)
           .map((e) => RouteResponse.fromJson(e as Map<String, dynamic>))
           .toList(),

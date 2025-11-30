@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_data_generator.dart';
 
 class QuickStatsCard extends StatelessWidget {
   const QuickStatsCard({super.key});
@@ -10,8 +7,6 @@ class QuickStatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Datos mock de estadísticas
-    final completedRoutes = MockDataGenerator.generateCompletedRoutes(5);
-    final stats = MockDataGenerator.generateDriverStats(completedRoutes);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -53,7 +48,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Rutas',
-                  '${stats.totalRoutesCompleted}',
+                  '${10}',
                   Icons.route,
                   Colors.blue,
                 ),
@@ -63,7 +58,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Contenedores',
-                  '${stats.totalContainersCollected}',
+                  '${50}',
                   Icons.delete_outline,
                   Colors.orange,
                 ),
@@ -73,7 +68,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Distancia',
-                  stats.formattedDistance,
+                  '${100} km',
                   Icons.straighten,
                   AppColors.primary,
                 ),

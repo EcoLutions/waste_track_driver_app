@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_data_generator.dart';
 
 class ProfilePageImproved extends StatelessWidget {
   const ProfilePageImproved({super.key});
@@ -21,10 +20,6 @@ class ProfilePageImproved extends StatelessWidget {
 
           final driver = state.driver;
           final user = state.user;
-
-          // Generar estadísticas mock
-          final completedRoutes = MockDataGenerator.generateCompletedRoutes(5);
-          final stats = MockDataGenerator.generateDriverStats(completedRoutes);
 
           return CustomScrollView(
             slivers: [
@@ -105,12 +100,6 @@ class ProfilePageImproved extends StatelessWidget {
                   children: [
                     const SizedBox(height: 20),
 
-                    // Estadísticas
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildStatsCard(stats),
-                    ),
-
                     const SizedBox(height: 16),
 
                     // Información del conductor
@@ -142,70 +131,6 @@ class ProfilePageImproved extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(DriverStats stats) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.bar_chart, color: AppColors.primary),
-              const SizedBox(width: 8),
-              const Text(
-                'Estadísticas',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  'Rutas Completadas',
-                  '${stats.totalRoutesCompleted}',
-                  Icons.check_circle_outline,
-                  AppColors.success,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatItem(
-                  'Contenedores',
-                  '${stats.totalContainersCollected}',
-                  Icons.delete_outline,
-                  Colors.blue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildStatItem(
-            'Distancia Total',
-            stats.formattedDistance,
-            Icons.route,
-            AppColors.primary,
-          ),
-        ],
       ),
     );
   }

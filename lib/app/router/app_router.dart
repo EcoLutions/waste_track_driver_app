@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
-import 'package:waste_track_driver_app/pages/home/ui/home_page_improved.dart';
+import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
 import 'package:waste_track_driver_app/pages/profile/ui/profile_page_improved.dart';
@@ -71,7 +71,7 @@ class AppRouter {
                 GoRoute(
                   path: '/home',
                   name: 'home',
-                  builder: (context, state) => const HomePageImproved(),
+                  builder: (context, state) => const HomePage(),
                 ),
               ],
             ),

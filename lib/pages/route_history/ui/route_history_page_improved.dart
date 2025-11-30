@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_data_generator.dart';
+import 'package:waste_track_driver_app/shared/model/entities/route_with_waypoints.dart';
+import 'package:waste_track_driver_app/shared/model/entities/waypoint_with_container.dart';
 
 class RouteHistoryPageImproved extends StatelessWidget {
   const RouteHistoryPageImproved({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Generar rutas completadas mock
-    final completedRoutes = MockDataGenerator.generateCompletedRoutes(5);
+    final List<RouteWithWaypoints> completedRoutes = [];
 
     return Scaffold(
       backgroundColor: AppColors.background,
