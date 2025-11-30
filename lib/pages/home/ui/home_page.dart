@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
-import 'package:waste_track_driver_app/pages/home/ui/widgets/active_route_modal.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_event.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_state.dart';
+import 'package:waste_track_driver_app/features/home_route/ui/active_route_modal.dart';
 import 'package:waste_track_driver_app/pages/home/ui/widgets/greeting_header.dart';
-import 'package:waste_track_driver_app/pages/home/ui/widgets/quick_stats_card.dart';
+import 'package:waste_track_driver_app/features/home_driver_stats/ui/quick_stats_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,8 +19,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isGeneratingWaypoints = false;
-
   @override
   void initState() {
     super.initState();
@@ -31,16 +29,32 @@ class _HomePageState extends State<HomePage> {
 
   void _loadActiveRoute() {
     final userSessionState = context.read<UserSessionBloc>().state;
-    
+
     if (userSessionState.driver != null && userSessionState.district != null) {
-      context.read<RouteAssignmentBloc>().add(
-            LoadActiveRoute(
-              driverId: userSessionState.driver!.id,
-              districtId: userSessionState.district!.id,
-            ),
-          );
+      context.read<HomeRouteBloc>().add(
+        LoadActiveRoute(
+          driverId: userSessionState.driver!.id,
+          districtId: userSessionState.district!.id,
+        ),
+      );
     } else {
-      debugPrint('⚠️ Cannot load route: driverId=${userSessionState.driver?.id}, districtId=${userSessionState.district?.id}');
+      debugPrint(
+        '⚠️ Cannot load route: driverId=${userSessionState.driver?.id}, '
+            'districtId=${userSessionState.district?.id}',
+      );
+    }
+  }
+
+  void _refreshRoute() {
+    final userSessionState = context.read<UserSessionBloc>().state;
+
+    if (userSessionState.driver != null && userSessionState.district != null) {
+      context.read<HomeRouteBloc>().add(
+        RefreshActiveRoute(
+          driverId: userSessionState.driver!.id,
+          districtId: userSessionState.district!.id,
+        ),
+      );
     }
   }
 
@@ -49,32 +63,17 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: MultiBlocListener(
-          listeners: [
-            // Listener para UserSessionBloc: cargar ruta cuando se cargue la sesión
-            BlocListener<UserSessionBloc, UserSessionState>(
-              listener: (context, state) {
-                if (state is UserSessionLoaded) {
-                  debugPrint('✅ User session loaded, loading active route...');
-                  _loadActiveRoute();
-                }
-              },
-            ),
-            // Listener para RouteAssignmentBloc: navegar al mapa cuando se generen waypoints
-            BlocListener<RouteAssignmentBloc, RouteAssignmentState>(
-              listener: (context, state) {
-                if (state is RouteAssignmentAssigned && _isGeneratingWaypoints) {
-                  _isGeneratingWaypoints = false;
-                  debugPrint('🗺️ Waypoints generated, navigating to map...');
-                  context.push('/route-map/${state.route.id}');
-                }
-              },
-            ),
-          ],
+        child: BlocListener<UserSessionBloc, UserSessionState>(
+          listener: (context, state) {
+            if (state is UserSessionLoaded) {
+              debugPrint('✅ User session loaded, loading active route...');
+              _loadActiveRoute();
+            }
+          },
           child: RefreshIndicator(
             onRefresh: () async {
-              _loadActiveRoute();
-              await Future.delayed(const Duration(seconds: 1));
+              _refreshRoute();
+              await Future.delayed(const Duration(milliseconds: 500));
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -92,7 +91,8 @@ class _HomePageState extends State<HomePage> {
                         onNotificationTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('Notificaciones - Próximamente')),
+                              content: Text('Notificaciones - Próximamente'),
+                            ),
                           );
                         },
                       );
@@ -111,17 +111,17 @@ class _HomePageState extends State<HomePage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'Estado de Ruta',
+                      'Estado de Rutas',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Estado de ruta (tarjeta de error o "Sin rutas")
-                  BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
+                  // Estado de ruta
+                  BlocBuilder<HomeRouteBloc, HomeRouteState>(
                     builder: (context, state) {
                       return _buildRouteStatus(context, state);
                     },
@@ -129,22 +129,22 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 16),
 
-                  // Card de ruta activa (se mueve con el scroll)
-                  BlocBuilder<RouteAssignmentBloc, RouteAssignmentState>(
+                  // Card de ruta activa (solo si hay ruta)
+                  BlocBuilder<HomeRouteBloc, HomeRouteState>(
                     builder: (context, state) {
-                      if (state is RouteAssignmentAssigned) {
+                      if (state is HomeRouteFound) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: ActiveRouteModal(
                             route: state.route,
-                            waypoints: state.waypoints,
+                            waypoints: const [], // HomePage no necesita waypoints detallados
                             onTap: () {
-                              // Navegar al mapa de ruta
+                              // Navegar al mapa de ruta (usa RouteAssignmentBloc)
                               context.push('/route-map/${state.route.id}');
                             },
                             onStartRoute: () {
-                              // Marcar que estamos generando waypoints
-                              _isGeneratingWaypoints = true;
+                              // Navegar al mapa para generar waypoints
+                              context.push('/route-map/${state.route.id}');
                             },
                           ),
                         );
@@ -163,30 +163,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRouteStatus(BuildContext context, RouteAssignmentState state) {
+  Widget _buildRouteStatus(BuildContext context, HomeRouteState state) {
     return switch (state) {
-      RouteAssignmentInitial() || RouteAssignmentLoading() => Padding(
-          padding: const EdgeInsets.all(32),
-          child: Center(
-            child: Column(
-              children: [
-                CircularProgressIndicator(
-                  color: AppColors.primary,
+      HomeRouteInitial() || HomeRouteLoading() => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Column(
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Cargando información de rutas...',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Cargando información de rutas...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      RouteAssignmentNoRoute() => _buildNoRouteCard(context),
-      RouteAssignmentAssigned() => const SizedBox.shrink(), // No mostrar nada, solo el modal flotante
-      RouteAssignmentError(:final message) => _buildErrorCard(context, message),
+      ),
+      HomeRouteNotFound() => _buildNoRouteCard(context),
+      HomeRouteFound() => const SizedBox.shrink(), // Se muestra el modal
+      HomeRouteError(:final message) => _buildErrorCard(context, message),
     };
   }
 
@@ -223,15 +223,15 @@ class _HomePageState extends State<HomePage> {
           Text(
             'Sin rutas asignadas',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'No tienes rutas programadas en este momento',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+              color: Colors.grey[600],
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -255,16 +255,16 @@ class _HomePageState extends State<HomePage> {
           Text(
             'Error al cargar datos',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.red[900],
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.red[900],
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             message,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.red[700],
-                ),
+              color: Colors.red[700],
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),

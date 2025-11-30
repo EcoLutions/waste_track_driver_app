@@ -6,7 +6,6 @@ class QuickStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Datos mock de estadísticas
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -24,15 +23,15 @@ class QuickStatsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.analytics_outlined,
                 color: AppColors.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 'Resumen de Hoy',
                 style: TextStyle(
                   fontSize: 16,

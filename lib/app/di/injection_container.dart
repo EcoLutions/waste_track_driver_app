@@ -26,6 +26,9 @@ import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_s
 import 'package:waste_track_driver_app/entities/waypoint/api/services/waypoint_service_impl.dart';
 import 'package:waste_track_driver_app/features/authentication/api/auth_service_imp.dart';
 import 'package:waste_track_driver_app/features/authentication/authentication.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';  // ⭐ NUEVO
+import 'package:waste_track_driver_app/features/home_route/model/home_route_repository.dart';  // ⭐ NUEVO
+import 'package:waste_track_driver_app/features/home_route/model/home_route_repository_impl.dart';  // ⭐ NUEVO
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_repository.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_repository_impl.dart';
@@ -148,9 +151,14 @@ Future<void> init() async {
         () => UserSessionBloc(userSessionRepository: sl()),
   );
 
-  // RouteAssignmentBloc
+  // RouteAssignmentBloc (for route-map page)
   sl.registerFactory<RouteAssignmentBloc>(
         () => RouteAssignmentBloc(routeAssignmentRepository: sl()),
+  );
+
+  // ⭐ HomeRouteBloc (for home page)
+  sl.registerFactory<HomeRouteBloc>(
+        () => HomeRouteBloc(homeRouteRepository: sl()),
   );
 
   // ==================== REPOSITORIES ====================
@@ -180,6 +188,13 @@ Future<void> init() async {
       routeRepository: sl(),
       wayPointRepository: sl(),
       containerRepository: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<HomeRouteRepository>(
+        () => HomeRouteRepositoryImpl(
+      routeRepository: sl(),
+      wayPointRepository: sl(),
     ),
   );
 

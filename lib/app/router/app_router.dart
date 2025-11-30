@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
+import 'package:waste_track_driver_app/app/di/injection_container.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
 import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
@@ -71,7 +74,12 @@ class AppRouter {
                 GoRoute(
                   path: '/home',
                   name: 'home',
-                  builder: (context, state) => const HomePage(),
+                  builder: (context, state) {
+                    return BlocProvider(
+                      create: (_) => sl<HomeRouteBloc>(),
+                      child: const HomePage(),
+                    );
+                  },
                 ),
               ],
             ),

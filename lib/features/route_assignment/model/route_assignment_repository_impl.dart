@@ -34,6 +34,7 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
       case Success(data: final routes):
         _logger.i('📋 Found ${routes.length} active routes in district');
 
+        // Filtrar por el driverId específico
         try {
           final activeRoute = routes.firstWhere(
                 (route) => route.driverId == driverId,
@@ -56,6 +57,7 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
     }
   }
 
+
   @override
   Future<Resource<RouteAssignmentData>> refreshRoute(String routeId) async {
     _logger.i('🔄 Refreshing route: $routeId');
@@ -66,11 +68,13 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId) async {
     _logger.i('🗺️ Generating optimized waypoints for route: $routeId');
 
+    // Llamar al endpoint para generar waypoints
     final result = await _routeRepository.generateOptimizedWaypoints(routeId);
 
     switch (result) {
       case Success():
         _logger.i('✅ Waypoints generated, reloading route data');
+        // Recargar todos los datos (route, waypoints, containers)
         return _loadRouteData(routeId);
 
       case Failure(message: final msg, statusCode: final code):
@@ -83,11 +87,13 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId) async {
     _logger.i('✅ Marking waypoint as visited: $waypointId');
 
+    // Llamar al endpoint para marcar como visitado (pasando routeId)
     final result = await _wayPointRepository.markAsVisited(waypointId, routeId);
 
     switch (result) {
       case Success():
         _logger.i('✅ Waypoint marked as visited, reloading route data');
+        // Recargar todos los datos para reflejar el cambio
         return _loadRouteData(routeId);
 
       case Failure(message: final msg, statusCode: final code):
@@ -105,7 +111,6 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
     switch (routeResult) {
       case Success(data: final route):
         _logger.i('✅ Route loaded: ${route.id}');
-        _logger.i('📊 Route status: ${route.status.displayName}');
 
         // Paso 2: Cargar WayPoints
         final wayPointsResult = await _wayPointRepository.getByRouteId(routeId);
@@ -114,14 +119,6 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
           case Success(data: final wayPoints):
             _logger.i('📍 Found ${wayPoints.length} waypoints');
 
-            if (wayPoints.isEmpty) {
-              _logger.i('ℹ️ Route has no waypoints yet - returning route with empty waypoints list');
-              return Success(RouteAssignmentData(
-                route: route,
-                wayPointsWithContainers: [],
-              ));
-            }
-
             // Ordenar por sequenceOrder
             wayPoints.sort((a, b) => a.sequenceOrder.compareTo(b.sequenceOrder));
 
@@ -129,7 +126,8 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
             final wayPointsWithContainers = <WayPointWithContainer>[];
 
             for (final wayPoint in wayPoints) {
-              final containerResult = await _containerRepository.getById(wayPoint.containerId);
+              final containerResult =
+              await _containerRepository.getById(wayPoint.containerId);
 
               switch (containerResult) {
                 case Success(data: final container):
@@ -140,22 +138,24 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
                   break;
 
                 case Failure(message: final msg):
-                  _logger.w('⚠️ Failed to load container ${wayPoint.containerId}: $msg');
+                  _logger.w(
+                    '⚠️ Failed to load container ${wayPoint.containerId}: $msg',
+                  );
                   // Continuar con los demás waypoints
                   break;
               }
             }
 
-            // ✅ Solo fallar si hay waypoints pero NINGUNO tiene container
-            if (wayPoints.isNotEmpty && wayPointsWithContainers.isEmpty) {
-              _logger.w('⚠️ No waypoints with containers could be loaded');
+            if (wayPointsWithContainers.isEmpty) {
+              _logger.w('⚠️ No waypoints with containers loaded');
               return const Failure(
-                message: 'No se pudieron cargar los contenedores de los puntos de recolección',
-                statusCode: 500,
+                message: 'No se pudieron cargar los puntos de recolección',
               );
             }
 
-            _logger.i('✅ Route data loaded: ${wayPointsWithContainers.length} waypoints with containers');
+            _logger.i(
+              '✅ Route data loaded: ${wayPointsWithContainers.length} waypoints',
+            );
 
             return Success(RouteAssignmentData(
               route: route,
@@ -163,14 +163,6 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
             ));
 
           case Failure(message: final msg, statusCode: final code):
-            if (code == 404 || msg.contains('not found') || msg.contains('No se encontraron')) {
-              _logger.i('ℹ️ No waypoints found for route - returning route with empty waypoints list');
-              return Success(RouteAssignmentData(
-                route: route,
-                wayPointsWithContainers: [],
-              ));
-            }
-
             _logger.e('❌ Failed to load waypoints: $msg');
             return Failure(message: msg, statusCode: code);
         }
