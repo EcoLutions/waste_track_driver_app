@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
@@ -16,69 +15,64 @@ class MainNavigationPage extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: _buildModernNavBar(context),
+      bottomNavigationBar: _buildGreenNavBar(context),
     );
   }
 
-  Widget _buildModernNavBar(BuildContext context) {
+  Widget _buildGreenNavBar(BuildContext context) {
     final index = navigationShell.currentIndex;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOut,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.15),
-              ),
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.18),
+                  color: AppColors.primary.withOpacity(0.35),
                   blurRadius: 18,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: NavigationBarTheme(
               data: NavigationBarThemeData(
+                height: 70,
                 elevation: 0,
-                indicatorColor: AppColors.primary.withOpacity(0.15),
-                labelTextStyle: MaterialStateProperty.resolveWith(
-                      (states) {
-                    final selected = states.contains(MaterialState.selected);
-                    return TextStyle(
-                      color: selected
-                          ? AppColors.primary
-                          : Colors.grey.shade600,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 12,
-                    );
-                  },
-                ),
+                backgroundColor: Colors.transparent,
+                indicatorColor: Colors.white,
                 iconTheme: MaterialStateProperty.resolveWith(
                       (states) {
                     final selected = states.contains(MaterialState.selected);
                     return IconThemeData(
-                      size: selected ? 30 : 26,
+                      size: selected ? 28 : 24,
                       color: selected
                           ? AppColors.primary
-                          : Colors.grey.shade500,
+                          : Colors.white,
+                    );
+                  },
+                ),
+                labelTextStyle: MaterialStateProperty.resolveWith(
+                      (states) {
+                    final selected = states.contains(MaterialState.selected);
+                    return TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.w400,
                     );
                   },
                 ),
               ),
               child: NavigationBar(
-                height: 70,
-                elevation: 0,
-                backgroundColor: Colors.transparent,
                 selectedIndex: index,
+                backgroundColor: Colors.transparent,
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 onDestinationSelected: (i) {
                   navigationShell.goBranch(
