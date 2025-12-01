@@ -8,7 +8,17 @@ class ApiConstants {
       return 'http://10.0.2.2:8080/api/v1';
     } else {
       // Production
-      return 'https://api.ecolucions.com/api/v1';
+      return 'https://api.ecolutions.com/api/v1';
+    }
+  }
+
+  static String get wsBaseUrl {
+    if (kDebugMode) {
+      // Development (Android Emulator)
+      return 'ws://10.0.2.2:8080';
+    } else {
+      // Production
+      return 'wss://api.ecolutions.com/api/v1';
     }
   }
 

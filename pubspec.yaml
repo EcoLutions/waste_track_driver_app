@@ -38,6 +38,9 @@ dependencies:
   flutter_polyline_points: ^3.1.0
   url_launcher: ^6.3.2
 
+  # Websockets
+  stomp_dart_client: ^3.0.1
+
   # Utils
   intl: ^0.20.2
   uuid: ^4.5.2
