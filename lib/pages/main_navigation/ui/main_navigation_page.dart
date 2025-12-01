@@ -2,10 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
+import 'package:waste_track_driver_app/features/header/ui/greeting_header.dart';
 
 class MainNavigationPage extends StatelessWidget {
   const MainNavigationPage({
-    required this.navigationShell, super.key,
+    required this.navigationShell,
+    super.key,
   });
 
   final StatefulNavigationShell navigationShell;
@@ -14,7 +16,21 @@ class MainNavigationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: navigationShell,
+      body: Column(
+        children: [
+          GreetingHeader(
+            onNotificationTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Notificaciones - Próximamente'),
+                ),
+              );
+            },
+          ),
+
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: _buildGreenNavBar(context),
     );
   }
@@ -53,9 +69,7 @@ class MainNavigationPage extends StatelessWidget {
                     final selected = states.contains(MaterialState.selected);
                     return IconThemeData(
                       size: selected ? 28 : 24,
-                      color: selected
-                          ? AppColors.primary
-                          : Colors.white,
+                      color: selected ? AppColors.primary : Colors.white,
                     );
                   },
                 ),

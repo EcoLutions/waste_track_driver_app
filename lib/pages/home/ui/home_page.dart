@@ -8,7 +8,7 @@ import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc
 import 'package:waste_track_driver_app/features/home_route/model/home_route_event.dart';
 import 'package:waste_track_driver_app/features/home_route/model/home_route_state.dart';
 import 'package:waste_track_driver_app/features/home_route/ui/active_route_modal.dart';
-import 'package:waste_track_driver_app/pages/home/ui/widgets/greeting_header.dart';
+import 'package:waste_track_driver_app/features/header/ui/greeting_header.dart';
 import 'package:waste_track_driver_app/features/home_driver_stats/ui/quick_stats_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -80,25 +80,6 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header con saludo
-                  BlocBuilder<UserSessionBloc, UserSessionState>(
-                    builder: (context, state) {
-                      final name = state is UserSessionLoaded
-                          ? (state.driver?.firstName ?? 'Conductor')
-                          : 'Conductor';
-                      return GreetingHeader(
-                        driverName: name,
-                        onNotificationTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Notificaciones - Próximamente'),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-
                   // Estadísticas rápidas
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
