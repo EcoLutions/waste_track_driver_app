@@ -9,4 +9,5 @@ abstract class RouteAssignmentRepository {
   Future<Resource<RouteAssignmentData>> refreshRoute(String routeId);
   Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId);
   Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId);
+  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude);
 }

@@ -117,4 +117,18 @@ class RouteServiceImpl implements RouteService {
           (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  @override
+  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) {
+    return _dioClient.handleRequest(
+          () => _dioClient.dio.post(
+        '${ApiConstants.baseUrl}/routes/$routeId/current-location',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      ),
+          (_) {},
+    );
+  }
 }

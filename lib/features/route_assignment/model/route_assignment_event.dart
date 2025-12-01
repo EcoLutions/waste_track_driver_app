@@ -45,3 +45,21 @@ final class MarkWaypointAsVisited extends RouteAssignmentEvent {
   @override
   List<Object?> get props => [waypointId];
 }
+
+
+class UpdateDriverLocation extends RouteAssignmentEvent {
+  const UpdateDriverLocation({
+    required this.latitude,
+    required this.longitude,
+    required this.heading,
+    required this.speed,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double heading;
+  final double speed;
+
+  @override
+  List<Object?> get props => [latitude, longitude, heading, speed];
+}

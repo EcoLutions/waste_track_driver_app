@@ -16,6 +16,7 @@ class RouteAssignmentBloc
     on<ClearRoute>(_onClearRoute);
     on<GenerateWaypoints>(_onGenerateWaypoints);
     on<MarkWaypointAsVisited>(_onMarkWaypointAsVisited);
+    on<UpdateDriverLocation>(_onUpdateDriverLocation);
   }
 
   final RouteAssignmentRepository _routeAssignmentRepository;
@@ -23,12 +24,7 @@ class RouteAssignmentBloc
 
   String? _currentRouteId;
 
-  // ==================== LOAD ACTIVE ROUTE ====================
-
-  Future<void> _onLoadActiveRoute(
-      LoadActiveRoute event,
-      Emitter<RouteAssignmentState> emit,
-      ) async {
+  Future<void> _onLoadActiveRoute(LoadActiveRoute event, Emitter<RouteAssignmentState> emit,) async {
     _logger.i('🚀 Loading active route for driver: ${event.driverId} in district: ${event.districtId}');
     emit(const RouteAssignmentState.loading());
 
@@ -77,12 +73,7 @@ class RouteAssignmentBloc
     }
   }
 
-  // ==================== REFRESH ROUTE ====================
-
-  Future<void> _onRefreshRoute(
-      RefreshRoute event,
-      Emitter<RouteAssignmentState> emit,
-      ) async {
+  Future<void> _onRefreshRoute(RefreshRoute event, Emitter<RouteAssignmentState> emit,) async {
     if (_currentRouteId == null) {
       _logger.w('⚠️ Cannot refresh: no current route');
       return;
@@ -117,23 +108,13 @@ class RouteAssignmentBloc
     }
   }
 
-  // ==================== CLEAR ROUTE ====================
-
-  Future<void> _onClearRoute(
-      ClearRoute event,
-      Emitter<RouteAssignmentState> emit,
-      ) async {
+  Future<void> _onClearRoute(ClearRoute event, Emitter<RouteAssignmentState> emit,) async {
     _logger.i('🧹 Clearing route');
     _currentRouteId = null;
     emit(const RouteAssignmentState.noRoute());
   }
 
-  // ==================== GENERATE WAYPOINTS ====================
-
-  Future<void> _onGenerateWaypoints(
-      GenerateWaypoints event,
-      Emitter<RouteAssignmentState> emit,
-      ) async {
+  Future<void> _onGenerateWaypoints(GenerateWaypoints event, Emitter<RouteAssignmentState> emit,) async {
     _logger.i('🗺️ Generating optimized waypoints for route: ${event.routeId}');
     emit(const RouteAssignmentState.loading());
 
@@ -167,12 +148,7 @@ class RouteAssignmentBloc
     }
   }
 
-  // ==================== MARK WAYPOINT AS VISITED ====================
-
-  Future<void> _onMarkWaypointAsVisited(
-    MarkWaypointAsVisited event,
-    Emitter<RouteAssignmentState> emit,
-  ) async {
+  Future<void> _onMarkWaypointAsVisited(MarkWaypointAsVisited event, Emitter<RouteAssignmentState> emit,) async {
     _logger.i('✅ Marking waypoint as visited: ${event.waypointId}');
 
     if (_currentRouteId == null) {
@@ -205,6 +181,29 @@ class RouteAssignmentBloc
       _logger.e('💥 Exception in _onMarkWaypointAsVisited: $e');
       _logger.e('StackTrace: $stackTrace');
       emit(RouteAssignmentState.error('Error inesperado: $e'));
+    }
+  }
+
+  Future<void> _onUpdateDriverLocation(UpdateDriverLocation event, Emitter<RouteAssignmentState> emit,) async {
+    if (state is! RouteAssignmentAssigned) {
+      return;
+    }
+
+    final currentState = state as RouteAssignmentAssigned;
+
+    try {
+      await _routeAssignmentRepository.updateDriverLocation(
+        currentState.route.id,
+        event.latitude,
+        event.longitude
+      ).then((_) {
+        _logger.d('Location sent to backend: ${event.latitude}, ${event.longitude}');
+      }).catchError((error) {
+        _logger.w('Failed to send location to backend: $error');
+      });
+
+    } catch (e) {
+      _logger.e('Error updating driver location: $e');
     }
   }
 }

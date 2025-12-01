@@ -172,4 +172,20 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
         return Failure(message: msg, statusCode: code);
     }
   }
+
+  @override
+  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) async {
+    _logger.i('📍 Updating driver location for route: $routeId');
+
+    final result = await _routeRepository.updateDriverLocation(routeId, latitude, longitude);
+
+    switch (result) {
+      case Success():
+        _logger.i('Driver location updated');
+        return const Success(null);
+      case Failure<void>():
+        _logger.e('Failed to update driver location');
+        return const Failure(message: 'Error al actualizar la ubicación del conductor');
+    }
+  }
 }
