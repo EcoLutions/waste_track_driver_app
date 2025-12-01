@@ -434,17 +434,17 @@ class _RouteMapPageState extends State<RouteMapPage> {
     if (currentState is RouteAssignmentAssigned) {
       nextWaypoint = _navigationService.getNextWaypoint(currentState.waypoints);
 
-      _logger.i(' DEBUG - Total waypoints: ${currentState.waypoints.length}');
+      _logger.i('🔍 DEBUG - Total waypoints: ${currentState.waypoints.length}');
       for (var w in currentState.waypoints) {
         _logger.i('   Waypoint #${w.wayPoint.sequenceOrder}: ${w.wayPoint.status} (id: ${w.wayPoint.id})');
       }
-      _logger.i('Next waypoint: #${nextWaypoint?.wayPoint.sequenceOrder} (id: ${nextWaypoint?.wayPoint.id})');
-      _logger.i('Tapped waypoint: #${waypoint.wayPoint.sequenceOrder} (id: ${waypoint.wayPoint.id})');
+      _logger.i('🎯 Next waypoint: #${nextWaypoint?.wayPoint.sequenceOrder} (id: ${nextWaypoint?.wayPoint.id})');
+      _logger.i('👆 Tapped waypoint: #${waypoint.wayPoint.sequenceOrder} (id: ${waypoint.wayPoint.id})');
     }
 
     final isNextInSequence = nextWaypoint?.wayPoint.id == waypoint.wayPoint.id;
 
-    _logger.i('isNextInSequence: $isNextInSequence');
+    _logger.i('✅ isNextInSequence: $isNextInSequence');
 
     showModalBottomSheet(
       context: context,
@@ -694,10 +694,25 @@ class _RouteMapPageState extends State<RouteMapPage> {
     return Scaffold(
       body: BlocConsumer<RouteAssignmentBloc, RouteAssignmentState>(
         listener: (context, state) {
-          _logger.d('📡 RouteAssignmentBloc state changed: ${state.runtimeType}');
+          _logger.d('RouteAssignmentBloc state changed: ${state.runtimeType}');
 
           if (state is RouteAssignmentAssigned) {
             _logger.i('Route assigned with ${state.waypoints.length} waypoints');
+
+            final nextWaypoint = _navigationService.getNextWaypoint(state.waypoints);
+            final distanceToNext = _navigationService.calculateDistanceToWaypoint(
+              _navState.currentPosition,
+              nextWaypoint,
+            );
+
+            setState(() {
+              _navState = _navState.copyWith(
+                nextWaypoint: nextWaypoint,
+                distanceToNextWaypoint: distanceToNext,
+              );
+            });
+
+            _logger.i('NextWaypoint updated: ${nextWaypoint?.wayPoint.sequenceOrder}');
 
             if (_navState.currentPosition != null) {
               _updateMarkersAndDirections(state);
