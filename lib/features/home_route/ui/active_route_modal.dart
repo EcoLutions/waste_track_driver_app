@@ -44,14 +44,14 @@ class ActiveRouteModal extends StatelessWidget {
                 curve: Curves.easeOut,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -80,7 +80,7 @@ class ActiveRouteModal extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
+                            color: AppColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
@@ -98,8 +98,8 @@ class ActiveRouteModal extends StatelessWidget {
                             children: [
                               Text(
                                 route.status == RouteStatus.inProgress
-                                    ? "Ruta en Progreso"
-                                    : "Ruta Asignada",
+                                    ? 'Ruta en Progreso'
+                                    : 'Ruta Asignada',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -108,7 +108,7 @@ class ActiveRouteModal extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 route.status == RouteStatus.inProgress
-                                    ? "$completed de $total puntos completados"
+                                    ? '$completed de $total puntos completados'
                                     : "Inicio: ${DateFormat('HH:mm').format(route.scheduledStartAt)}",
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -127,11 +127,11 @@ class ActiveRouteModal extends StatelessWidget {
                     // Info fila
                     Row(
                       children: [
-                        Expanded(child: _info("Puntos", "$total", Icons.location_on)),
+                        Expanded(child: _info('Puntos', '$total', Icons.location_on)),
                         _divider(),
-                        Expanded(child: _info("Distancia", route.formattedTotalDistance, Icons.straighten)),
+                        Expanded(child: _info('Distancia', route.formattedTotalDistance, Icons.straighten)),
                         _divider(),
-                        Expanded(child: _info("Tiempo", route.formattedEstimatedDuration, Icons.access_time)),
+                        Expanded(child: _info('Tiempo', route.formattedEstimatedDuration, Icons.access_time)),
                       ],
                     ),
 
@@ -198,7 +198,7 @@ class ActiveRouteModal extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )
@@ -207,10 +207,10 @@ class ActiveRouteModal extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.map_rounded, color: Colors.white),
+            const Icon(Icons.map_rounded, color: Colors.white),
             const SizedBox(width: 8),
             Text(
-              isAssigned ? "Iniciar Ruta" : "Ver Mapa de Ruta",
+              isAssigned ? 'Iniciar Ruta' : 'Ver Mapa de Ruta',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,

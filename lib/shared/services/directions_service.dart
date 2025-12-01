@@ -52,7 +52,7 @@ static String get _googleMapsApiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
           .map((point) => LatLng(point.latitude, point.longitude))
           .toList();
 
-      double totalDistance = _calculateRouteDistance(polylineCoordinates);
+      final totalDistance = _calculateRouteDistance(polylineCoordinates);
 
       return DirectionsResult(
         polylinePoints: polylineCoordinates,

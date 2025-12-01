@@ -92,7 +92,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.32),
+            color: AppColors.primary.withValues(alpha: 0.32),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -105,7 +105,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -125,7 +125,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
                 Text(
                   greeting,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
@@ -161,7 +161,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.22),
+              color: Colors.white.withValues(alpha: 0.22),
               shape: BoxShape.circle,
             ),
             child: const Icon(
