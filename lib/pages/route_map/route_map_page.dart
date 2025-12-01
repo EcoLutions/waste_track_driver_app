@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -81,8 +82,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
       }
     } else {
       _logger.i('✅ Route already loaded with ${currentState.waypoints.length} waypoints');
-      // ⭐ NO llamar aquí, esperar a tener ubicación
-      // Solo actualizar marcadores
       _updateMarkers(currentState);
     }
   }
@@ -185,7 +184,9 @@ class _RouteMapPageState extends State<RouteMapPage> {
     _updateMarkers(state);
 
     // Cargar direcciones de Google
-    await _loadGoogleDirections(state);
+    if (_navState.currentPosition != null) {
+      await _loadGoogleDirections(state);
+    }
   }
 
   void _updateMarkers(RouteAssignmentAssigned state) {
@@ -226,9 +227,11 @@ class _RouteMapPageState extends State<RouteMapPage> {
       );
     }
 
-    setState(() {
-      _markers = markers;
-    });
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+      });
+    }
 
     _logger.d('✅ Markers updated: ${_markers.length} total');
   }
@@ -253,13 +256,14 @@ class _RouteMapPageState extends State<RouteMapPage> {
     if (directions != null && mounted) {
       _logger.i('✅ Directions loaded successfully');
 
-      // Crear polyline con los puntos de la ruta
+      final simplifiedPoints = _simplifyPolyline(directions.polylinePoints);
+
       final polyline = Polyline(
         polylineId: const PolylineId('route'),
-        points: directions.polylinePoints,
+        points: simplifiedPoints,
         color: AppColors.primary,
         width: 5,
-        patterns: [PatternItem.dot, PatternItem.gap(10)],
+        geodesic: true,
       );
 
       setState(() {
@@ -268,14 +272,15 @@ class _RouteMapPageState extends State<RouteMapPage> {
         _isLoadingDirections = false;
       });
 
-      // Actualizar instrucción actual
       _updateNavigationState();
 
-      // Ajustar cámara para mostrar toda la ruta (solo en modo mapa completo)
       if (!_navState.isNavigationMode && _mapController != null) {
-        await _mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(directions.bounds, 100),
-        );
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (mounted && _mapController != null) {
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(directions.bounds, 80),
+          );
+        }
       }
     } else {
       _logger.e('❌ Failed to load directions');
@@ -286,12 +291,30 @@ class _RouteMapPageState extends State<RouteMapPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No se pudo cargar la ruta. Verifica tu conexión.'),
-            backgroundColor: Colors.red,
+            content: Text('No se pudo cargar la ruta. Usando ruta aproximada.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
           ),
         );
       }
     }
+  }
+
+  List<LatLng> _simplifyPolyline(List<LatLng> points) {
+    if (points.length <= 50) return points;
+
+    // Tomar 1 de cada 2 puntos si hay muchos
+    final simplified = <LatLng>[];
+    for (int i = 0; i < points.length; i += 2) {
+      simplified.add(points[i]);
+    }
+    // Siempre incluir el último punto
+    if (points.length % 2 != 0) {
+      simplified.add(points.last);
+    }
+
+    _logger.d('📉 Polyline simplified: ${points.length} → ${simplified.length} points');
+    return simplified;
   }
 
   void _updateNavigationState() {
@@ -325,7 +348,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
   void _updateCameraPosition(Position position) {
     if (_mapController == null) return;
 
-    final zoom = _navState.isNavigationMode ? 18.0 : 15.0;
+    final zoom = _navState.isNavigationMode ? 17.5 : 15.0; // ⭐ Reducido para mejor performance
     final tilt = _navState.isNavigationMode ? 45.0 : 0.0;
     final bearing = _navState.isNavigationMode ? position.heading : 0.0;
 
@@ -348,6 +371,13 @@ class _RouteMapPageState extends State<RouteMapPage> {
       _navState = _navState.copyWith(isNavigationMode: !_navState.isNavigationMode);
     });
 
+    // Actualizar marcadores (ocultar/mostrar ubicación actual)
+    final routeBloc = context.read<RouteAssignmentBloc>();
+    final currentState = routeBloc.state;
+    if (currentState is RouteAssignmentAssigned) {
+      _updateMarkers(currentState);
+    }
+
     // Actualizar cámara
     if (_navState.currentPosition != null) {
       _updateCameraPosition(_navState.currentPosition!);
@@ -355,10 +385,10 @@ class _RouteMapPageState extends State<RouteMapPage> {
 
     // Si salimos de modo navegación, ajustar a mostrar toda la ruta
     if (!_navState.isNavigationMode && _navState.directions != null) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (_mapController != null && _navState.directions != null) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (_mapController != null && _navState.directions != null && mounted) {
           _mapController!.animateCamera(
-            CameraUpdate.newLatLngBounds(_navState.directions!.bounds, 100),
+            CameraUpdate.newLatLngBounds(_navState.directions!.bounds, 80),
           );
         }
       });
@@ -407,6 +437,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
       SnackBar(
         content: Text('Punto ${waypoint.wayPoint.sequenceOrder} marcado como recolectado'),
         backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -453,7 +484,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                     _navState.currentPosition!.latitude,
                     _navState.currentPosition!.longitude,
                   )
-                      : const LatLng(-12.0464, -77.0428), // Lima, Perú
+                      : const LatLng(-12.0464, -77.0428),
                   zoom: 14,
                 ),
                 markers: _markers,
@@ -463,6 +494,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
                 zoomControlsEnabled: false,
                 compassEnabled: true,
                 mapToolbarEnabled: false,
+                buildingsEnabled: true,
+                trafficEnabled: false,
                 onMapCreated: (controller) {
                   _logger.i('✅ Google Map created');
                   _mapController = controller;
@@ -494,7 +527,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   right: 0,
                   child: Container(
                     margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -506,16 +539,19 @@ class _RouteMapPageState extends State<RouteMapPage> {
                       ],
                     ),
                     child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 18,
+                          height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                         SizedBox(width: 12),
-                        Text(
-                          'Cargando ruta desde Google Maps...',
-                          style: TextStyle(fontSize: 14),
+                        Expanded(
+                          child: Text(
+                            'Calculando ruta...',
+                            style: TextStyle(fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
@@ -548,8 +584,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   ),
               ],
 
-              // ==================== MODO MAPA COMPLETO ====================
-              if (!_navState.isNavigationMode && state is RouteAssignmentAssigned)
+              if (!_navState.isNavigationMode && state is RouteAssignmentAssigned && !_isLoadingDirections)
                 Positioned(
                   top: 60,
                   left: 16,
@@ -564,10 +599,12 @@ class _RouteMapPageState extends State<RouteMapPage> {
               Positioned(
                 top: _navState.isNavigationMode ? 200 : 200,
                 left: 16,
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
+                child: Material(
+                  color: Colors.white,
+                  shape: const CircleBorder(),
+                  elevation: 4,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -585,6 +622,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                       heroTag: 'location',
                       backgroundColor: Colors.white,
                       mini: true,
+                      elevation: 4,
                       onPressed: () {
                         if (_navState.currentPosition != null) {
                           _updateCameraPosition(_navState.currentPosition!);
@@ -604,6 +642,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                       backgroundColor: _navState.isNavigationMode
                           ? AppColors.primary
                           : Colors.white,
+                      elevation: 4,
                       onPressed: _toggleNavigationMode,
                       icon: Icon(
                         _navState.isNavigationMode ? Icons.map : Icons.navigation,
