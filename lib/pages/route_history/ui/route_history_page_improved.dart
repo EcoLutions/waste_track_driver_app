@@ -78,7 +78,7 @@ class RouteHistoryPageImproved extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -102,10 +102,10 @@ class RouteHistoryPageImproved extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
+                        color: AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.check_circle,
                         color: AppColors.success,
                         size: 24,
@@ -141,10 +141,10 @@ class RouteHistoryPageImproved extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
+                        color: AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Completada',
                         style: TextStyle(
                           color: AppColors.success,
@@ -197,7 +197,7 @@ class RouteHistoryPageImproved extends StatelessWidget {
                           minHeight: 6,
                           backgroundColor: Colors.grey[200],
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.success),
+                              const AlwaysStoppedAnimation<Color>(AppColors.success),
                         ),
                       ),
                     ),
@@ -290,7 +290,7 @@ class RouteHistoryPageImproved extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                Icon(Icons.route, color: AppColors.primary, size: 28),
+                const Icon(Icons.route, color: AppColors.primary, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

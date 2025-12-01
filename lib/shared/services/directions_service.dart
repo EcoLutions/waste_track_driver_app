@@ -167,15 +167,14 @@ static String get _googleMapsApiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 }
 
 class DirectionsResult {
-  final List<LatLng> polylinePoints;
-  final double totalDistance;
-  final LatLngBounds bounds;
-
   DirectionsResult({
     required this.polylinePoints,
     required this.totalDistance,
     required this.bounds,
   });
+  final List<LatLng> polylinePoints;
+  final double totalDistance;
+  final LatLngBounds bounds;
 
   String get formattedDistance => '${totalDistance.toStringAsFixed(2)} km';
 }

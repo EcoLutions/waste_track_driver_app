@@ -8,7 +8,7 @@ import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc
 import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
-import 'package:waste_track_driver_app/pages/profile/ui/profile_page_improved.dart';
+import 'package:waste_track_driver_app/pages/profile/ui/profile_page.dart';
 import 'package:waste_track_driver_app/pages/route_history/ui/route_history_page_improved.dart';
 import 'package:waste_track_driver_app/pages/route_map/route_map_page.dart';
 import 'package:waste_track_driver_app/pages/splash/ui/splash_page.dart';
@@ -99,7 +99,7 @@ class AppRouter {
                 GoRoute(
                   path: '/profile',
                   name: 'profile',
-                  builder: (context, state) => const ProfilePageImproved(),
+                  builder: (context, state) => const ProfilePage(),
                 ),
               ],
             ),

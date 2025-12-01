@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
@@ -15,19 +14,11 @@ class MainNavigationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: Column(
         children: [
           GreetingHeader(
-            onNotificationTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Notificaciones - Próximamente'),
-                ),
-              );
-            },
+            onNotificationTap: () {},
           ),
-
           Expanded(child: navigationShell),
         ],
       ),
@@ -38,82 +29,92 @@ class MainNavigationPage extends StatelessWidget {
   Widget _buildGreenNavBar(BuildContext context) {
     final index = navigationShell.currentIndex;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.35),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+      padding: EdgeInsets.only(
+        left: 18,
+        right: 18,
+        bottom: bottomPadding > 0 ? bottomPadding : 10,
+        top: 10,
+      ),
+      child: Container(
+        height: 72,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.28),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
-            child: NavigationBarTheme(
-              data: NavigationBarThemeData(
-                height: 70,
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                indicatorColor: Colors.white,
-                iconTheme: MaterialStateProperty.resolveWith(
-                      (states) {
-                    final selected = states.contains(MaterialState.selected);
-                    return IconThemeData(
-                      size: selected ? 28 : 24,
-                      color: selected ? AppColors.primary : Colors.white,
-                    );
-                  },
-                ),
-                labelTextStyle: MaterialStateProperty.resolveWith(
-                      (states) {
-                    final selected = states.contains(MaterialState.selected);
-                    return TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.w400,
-                    );
-                  },
-                ),
-              ),
-              child: NavigationBar(
-                selectedIndex: index,
-                backgroundColor: Colors.transparent,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                onDestinationSelected: (i) {
-                  navigationShell.goBranch(
-                    i,
-                    initialLocation: i == index,
-                  );
-                },
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
-                    label: 'Inicio',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.history_outlined),
-                    selectedIcon: Icon(Icons.history_rounded),
-                    label: 'Historial',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person_rounded),
-                    label: 'Perfil',
-                  ),
-                ],
-              ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navItem(
+              context,
+              index: index,
+              itemIndex: 0,
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: 'Inicio',
             ),
-          ),
+            _navItem(
+              context,
+              index: index,
+              itemIndex: 1,
+              icon: Icons.history_outlined,
+              selectedIcon: Icons.history_rounded,
+              label: 'Historial',
+            ),
+            _navItem(
+              context,
+              index: index,
+              itemIndex: 2,
+              icon: Icons.person_outline,
+              selectedIcon: Icons.person_rounded,
+              label: 'Perfil',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(BuildContext context, {
+        required int index,
+        required int itemIndex,
+        required IconData icon,
+        required IconData selectedIcon,
+        required String label,
+      }) {
+    final isSelected = index == itemIndex;
+
+    return GestureDetector(
+      onTap: () => navigationShell.goBranch(itemIndex, initialLocation: itemIndex == index),
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : icon,
+              size: isSelected ? 28 : 24,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w400,
+              ),
+            )
+          ],
         ),
       ),
     );
