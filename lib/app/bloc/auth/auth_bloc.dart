@@ -7,6 +7,7 @@ import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
 import 'package:waste_track_driver_app/features/authentication/api/auth_repository.dart';
 import 'package:waste_track_driver_app/features/authentication/model/sign_in_request.dart';
 import 'package:waste_track_driver_app/shared/lib/utils/resource.dart';
+import 'package:waste_track_driver_app/shared/websocket/websocket_manager.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({required AuthRepository authRepository})
@@ -35,6 +36,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     switch (result) {
       case Success(data: final authData):
+        await WebSocketManager().connect();
+        _logger.i('WebSocket connected');
         _logger.i('SignIn successful for user: ${authData.userId}');
         emit(AuthState.authenticated(
           userId: authData.userId,
@@ -108,6 +111,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit,) async {
+    WebSocketManager().disconnect();
+    _logger.i('WebSocket disconnected');
     _logger.i('Logout requested');
     await _authRepository.logout();
     emit(const AuthState.unauthenticated(message: 'Sesión cerrada'));

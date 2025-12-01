@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
-import 'package:waste_track_driver_app/pages/home/ui/home_page_improved.dart';
+import 'package:waste_track_driver_app/app/di/injection_container.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
+import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
-import 'package:waste_track_driver_app/pages/profile/ui/profile_page_improved.dart';
-import 'package:waste_track_driver_app/pages/route_history/ui/route_history_page_improved.dart';
+import 'package:waste_track_driver_app/pages/profile/ui/profile_page.dart';
+import 'package:waste_track_driver_app/pages/route_history/ui/route_history_page.dart';
 import 'package:waste_track_driver_app/pages/route_map/route_map_page.dart';
 import 'package:waste_track_driver_app/pages/splash/ui/splash_page.dart';
 
@@ -71,7 +74,12 @@ class AppRouter {
                 GoRoute(
                   path: '/home',
                   name: 'home',
-                  builder: (context, state) => const HomePageImproved(),
+                  builder: (context, state) {
+                    return BlocProvider(
+                      create: (_) => sl<HomeRouteBloc>(),
+                      child: const HomePage(),
+                    );
+                  },
                 ),
               ],
             ),
@@ -81,7 +89,7 @@ class AppRouter {
                 GoRoute(
                   path: '/history',
                   name: 'history',
-                  builder: (context, state) => const RouteHistoryPageImproved(),
+                  builder: (context, state) => const RouteHistoryPage(),
                 ),
               ],
             ),
@@ -91,7 +99,7 @@ class AppRouter {
                 GoRoute(
                   path: '/profile',
                   name: 'profile',
-                  builder: (context, state) => const ProfilePageImproved(),
+                  builder: (context, state) => const ProfilePage(),
                 ),
               ],
             ),

@@ -46,18 +46,22 @@ class RouteAssignmentBloc
           _logger.i('✅ Route loaded successfully: ${routeData.route.id}');
           _logger.i('📍 Total waypoints: ${routeData.totalWaypoints}');
 
+          if (routeData.wayPointsWithContainers.isEmpty) {
+            _logger.i('ℹ️ Route has no waypoints - needs generation');
+          }
+
           emit(RouteAssignmentState.routeAssigned(
             route: routeData.route,
             waypoints: routeData.wayPointsWithContainers,
           ));
           break;
 
-        case Failure(message: final msg):
-          _logger.w('⚠️ Repository failure: $msg');
+        case Failure(message: final msg, statusCode: final code):
+          _logger.w('⚠️ Repository failure: $msg (code: $code)');
 
-          // Si no hay ruta, no es error, es estado normal
           if (msg.contains('No active route found') ||
-              msg.contains('No se encontró')) {
+              msg.contains('No se encontró') ||
+              code == 404) {
             _logger.i('ℹ️ No active route found for driver - This is OK');
             emit(const RouteAssignmentState.noRoute());
           } else {

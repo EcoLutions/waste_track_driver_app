@@ -14,7 +14,7 @@ import 'package:waste_track_driver_app/features/route_assignment/model/route_ass
   
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: '.env');
   await di.init();
   runApp(const EcoLutionsDriverApp());
 }

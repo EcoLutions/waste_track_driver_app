@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_event.dart';
-import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
+import 'package:go_router/go_router.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
+import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
+import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -10,108 +11,220 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Perfil'),
-      ),
-      body: BlocBuilder<AuthBloc, AuthState>(
+      backgroundColor: AppColors.background,
+      body: BlocBuilder<UserSessionBloc, UserSessionState>(
         builder: (context, state) {
-          if (state is! AuthAuthenticated) {
-            return const Center(
-              child: Text('No autenticado'),
-            );
+          if (state is! UserSessionLoaded) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const CircleAvatar(
-                radius: 50,
-                child: Icon(Icons.person, size: 50),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Usuario: ${state.userId}',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Roles: ${state.roles.map((r) => r.name).join(", ")}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+          final driver = state.driver;
 
-              // Información del conductor (placeholder)
-              const ListTile(
-                leading: Icon(Icons.badge_outlined),
-                title: Text('Información del Conductor'),
-                subtitle: Text('Cargando...'),
-              ),
-              const Divider(),
+          return CustomScrollView(
+            slivers: [
+              // Contenido
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
 
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('Configuración'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Ir a configuración
-                },
-              ),
-              const Divider(),
+                    const SizedBox(height: 16),
 
-              ListTile(
-                leading: const Icon(Icons.help_outline),
-                title: const Text('Ayuda y Soporte'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Ir a ayuda
-                },
-              ),
-              const Divider(),
-
-              const SizedBox(height: 32),
-
-              OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: const Text('Cerrar Sesión'),
-                      content: const Text(
-                        '¿Estás seguro que deseas cerrar sesión?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text('Cancelar'),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-                            context.read<AuthBloc>().add(
-                              const LogoutRequested(),
-                            );
-                          },
-                          child: const Text('Cerrar Sesión'),
-                        ),
-                      ],
+                    // Información del conductor
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildInfoCard(context, driver),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar Sesión'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+
+                    const SizedBox(height: 16),
+
+                    // Opciones
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildOptionsCard(context),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Botón de cerrar sesión
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildLogoutButton(context),
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context, driver) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.person, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text(
+                'Información Personal',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildInfoRow(Icons.badge, 'DNI', driver.documentNumber),
+          const Divider(height: 24),
+          _buildInfoRow(Icons.phone, 'Teléfono', driver.phoneNumber),
+          const Divider(height: 24),
+          _buildInfoRow(Icons.email, 'Email', driver.emailAddress),
+          const Divider(height: 24),
+          _buildInfoRow(Icons.credit_card, 'Licencia', driver.driverLicense),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.end,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOptionsCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildOptionTile(
+            Icons.history,
+            'Historial de Rutas',
+            () => context.go('/history'),
+          ),
+          const Divider(height: 1),
+          _buildOptionTile(
+            Icons.settings,
+            'Configuración',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Próximamente')),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _buildOptionTile(
+            Icons.help_outline,
+            'Ayuda y Soporte',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Próximamente')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionTile(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Cerrar Sesión'),
+              content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.go('/login');
+                  },
+                  child: const Text(
+                    'Cerrar Sesión',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        icon: const Icon(Icons.logout, color: Colors.red),
+        label: const Text(
+          'Cerrar Sesión',
+          style: TextStyle(color: Colors.red),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: Colors.red),
+        ),
       ),
     );
   }

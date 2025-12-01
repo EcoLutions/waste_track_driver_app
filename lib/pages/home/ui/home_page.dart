@@ -3,11 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
-import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
-import 'package:waste_track_driver_app/pages/home/ui/route_assigned_card.dart';
+import 'package:waste_track_driver_app/app/theme/app_colors.dart';
+import 'package:waste_track_driver_app/features/home_driver_stats/ui/quick_stats_card.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_event.dart';
+import 'package:waste_track_driver_app/features/home_route/model/home_route_state.dart';
+import 'package:waste_track_driver_app/features/home_route/ui/active_route_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,204 +21,232 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🏠 HomePage - initState');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadActiveRoute();
     });
   }
 
   void _loadActiveRoute() {
-    debugPrint('🏠 HomePage - _loadActiveRoute called');
-    try {
-      final userSessionState = context.read<UserSessionBloc>().state;
-      debugPrint('🏠 User Session State: ${userSessionState.runtimeType}');
-      debugPrint('🏠 Driver ID: ${userSessionState.driver?.id}');
-      debugPrint('🏠 District ID: ${userSessionState.district?.id}');
+    final userSessionState = context.read<UserSessionBloc>().state;
 
-      if (userSessionState.driver != null && userSessionState.district != null) {
-        debugPrint('🏠 Loading route for driver: ${userSessionState.driver!.id}');
-        context.read<RouteAssignmentBloc>().add(
-          LoadActiveRoute(
-            driverId: userSessionState.driver!.id,
-            districtId: userSessionState.district!.id,
-          ),
-        );
-      } else {
-        debugPrint('⚠️ No driverId or districtId found in state');
-      }
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error loading active route: $e');
-      debugPrint('StackTrace: $stackTrace');
+    if (userSessionState.driver != null && userSessionState.district != null) {
+      context.read<HomeRouteBloc>().add(
+        LoadActiveRoute(
+          driverId: userSessionState.driver!.id,
+          districtId: userSessionState.district!.id,
+        ),
+      );
+    } else {
+      debugPrint(
+        'Cannot load route: driverId=${userSessionState.driver?.id}, '
+            'districtId=${userSessionState.district?.id}',
+      );
+    }
+  }
+
+  void _refreshRoute() {
+    final userSessionState = context.read<UserSessionBloc>().state;
+
+    if (userSessionState.driver != null && userSessionState.district != null) {
+      context.read<HomeRouteBloc>().add(
+        RefreshActiveRoute(
+          driverId: userSessionState.driver!.id,
+          districtId: userSessionState.district!.id,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏠 HomePage - build');
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inicio'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadActiveRoute,
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notificaciones - TODO')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: BlocConsumer<RouteAssignmentBloc, RouteAssignmentState>(
-        listener: (context, state) {
-          debugPrint('🏠 RouteAssignment State: ${state.runtimeType}');
-
-          if (state is RouteAssignmentAssigned &&
-              state.route.status == RouteStatus.inProgress) {
-            debugPrint('🏠 Route in progress, redirecting...');
-            context.go('/route-active');
-          }
-
-          if (state is RouteAssignmentError) {
-            debugPrint('❌ RouteAssignment Error: ${state.message}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${state.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          debugPrint('🏠 Building UI for state: ${state.runtimeType}');
-          return RefreshIndicator(
-            onRefresh: () async {
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: BlocListener<UserSessionBloc, UserSessionState>(
+          listener: (context, state) {
+            if (state is UserSessionLoaded) {
+              debugPrint('✅ User session loaded, loading active route...');
               _loadActiveRoute();
-              await Future.delayed(const Duration(seconds: 1));
+            }
+          },
+          child: RefreshIndicator(
+            onRefresh: () async {
+              _refreshRoute();
+              await Future.delayed(const Duration(milliseconds: 500));
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height - 200,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildContent(context, state),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Estadísticas rápidas
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: QuickStatsCard(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Título de sección
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Estado de Rutas',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Estado de ruta
+                  BlocBuilder<HomeRouteBloc, HomeRouteState>(
+                    builder: (context, state) {
+                      return _buildRouteStatus(context, state);
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Card de ruta activa (solo si hay ruta)
+                  BlocBuilder<HomeRouteBloc, HomeRouteState>(
+                    builder: (context, state) {
+                      if (state is HomeRouteFound) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ActiveRouteModal(
+                            route: state.route,
+                            onStartRoute: () {
+                              context.push('/route-map/${state.route.id}');
+                            },
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, RouteAssignmentState state) {
+  Widget _buildRouteStatus(BuildContext context, HomeRouteState state) {
     return switch (state) {
-      RouteAssignmentInitial() => _buildLoadingState('Inicializando...'),
-      RouteAssignmentLoading() => _buildLoadingState('Cargando rutas...'),
-      RouteAssignmentNoRoute() => _buildNoRouteState(context),
-      RouteAssignmentAssigned(:final route, :final waypoints) =>
-          _buildRouteAssignedState(context, route, waypoints),
-      RouteAssignmentError(:final message) => _buildErrorState(context, message),
+      HomeRouteInitial() || HomeRouteLoading() => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Column(
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Cargando información de rutas...',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      HomeRouteNotFound() => _buildNoRouteCard(context),
+      HomeRouteFound() => const SizedBox.shrink(),
+      HomeRouteError(:final message) => _buildErrorCard(context, message),
     };
   }
 
-  Widget _buildLoadingState(String message) {
-    debugPrint('🏠 Building loading state: $message');
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: const TextStyle(fontSize: 16),
+  Widget _buildNoRouteCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context, String message) {
-    debugPrint('🏠 Building error state: $message');
-    return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Error al cargar datos',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.route_outlined,
+              size: 48,
+              color: Colors.grey[400],
             ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _loadActiveRoute,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoRouteState(BuildContext context) {
-    debugPrint('🏠 Building no route state');
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.local_shipping_outlined,
-            size: 120,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Sin rutas asignadas',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.grey[600],
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'No tienes rutas programadas para hoy',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[500],
+            'No tienes rutas programadas en este momento',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: 200,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                context.go('/history');
-              },
-              icon: const Icon(Icons.history),
-              label: const Text('Ver Historial'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 1,
               ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Esperando nuevas rutas...',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -225,40 +254,45 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRouteAssignedState(
-      BuildContext context,
-      route,
-      waypoints,
-      ) {
-    debugPrint('🏠 Building route assigned state');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ruta Asignada',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
+  Widget _buildErrorCard(BuildContext context, String message) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700], size: 40),
+          const SizedBox(height: 12),
+          Text(
+            'Error al cargar datos',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Colors.red[900],
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        RouteAssignedCard(
-          route: route,
-          waypoints: waypoints,
-          onViewMap: () {
-            context.push('/route-map/${route.id}');
-          },
-          onViewDetails: () {
-            context.push('/route-details/${route.id}');
-          },
-          onStartRoute: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Iniciando ruta...'),
-              ),
-            );
-          },
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.red[700],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: _loadActiveRoute,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[700],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

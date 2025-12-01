@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
+import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/entities/waypoint/model/enums/waypoint_status.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
@@ -17,12 +17,10 @@ import 'package:waste_track_driver_app/shared/services/directions_service.dart';
 import 'package:waste_track_driver_app/shared/services/location_service.dart';
 
 class RouteMapPage extends StatefulWidget {
-  final String routeId;
-
   const RouteMapPage({
-    super.key,
-    required this.routeId,
+    required this.routeId, super.key,
   });
+  final String routeId;
 
   @override
   State<RouteMapPage> createState() => _RouteMapPageState();

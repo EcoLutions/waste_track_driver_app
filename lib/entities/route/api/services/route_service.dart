@@ -5,10 +5,17 @@ import 'package:waste_track_driver_app/shared/lib/utils/resource.dart';
 
 abstract class RouteService {
   Future<Resource<RouteResponse>> getById(String id);
-  Future<Resource<List<RouteResponse>>> getAll();
+  Future<Resource<List<RouteResponse>>> getAll({
+    String? districtId,
+    String? driverId,
+    String? vehicleId,
+    String? status,
+    List<String>? statuses,
+  });
   Future<Resource<List<RouteResponse>>> getActiveByDistrictId(String districtId);
   Future<Resource<RouteResponse>> create(CreateRouteRequest request);
   Future<Resource<RouteResponse>> update(String id, UpdateRouteRequest request);
   Future<Resource<void>> delete(String id);
   Future<Resource<RouteResponse>> generateOptimizedWaypoints(String id);
+  Future<Resource<RouteResponse>> startRoute(String routeId);
 }

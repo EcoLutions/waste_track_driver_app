@@ -67,16 +67,16 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   @override
   Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId) async {
     _logger.i('🗺️ Generating optimized waypoints for route: $routeId');
-    
+
     // Llamar al endpoint para generar waypoints
     final result = await _routeRepository.generateOptimizedWaypoints(routeId);
-    
+
     switch (result) {
       case Success():
         _logger.i('✅ Waypoints generated, reloading route data');
         // Recargar todos los datos (route, waypoints, containers)
         return _loadRouteData(routeId);
-        
+
       case Failure(message: final msg, statusCode: final code):
         _logger.e('❌ Failed to generate waypoints: $msg');
         return Failure(message: msg, statusCode: code);
@@ -86,16 +86,16 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   @override
   Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId) async {
     _logger.i('✅ Marking waypoint as visited: $waypointId');
-    
+
     // Llamar al endpoint para marcar como visitado (pasando routeId)
     final result = await _wayPointRepository.markAsVisited(waypointId, routeId);
-    
+
     switch (result) {
       case Success():
         _logger.i('✅ Waypoint marked as visited, reloading route data');
         // Recargar todos los datos para reflejar el cambio
         return _loadRouteData(routeId);
-        
+
       case Failure(message: final msg, statusCode: final code):
         _logger.e('❌ Failed to mark waypoint as visited: $msg');
         return Failure(message: msg, statusCode: code);

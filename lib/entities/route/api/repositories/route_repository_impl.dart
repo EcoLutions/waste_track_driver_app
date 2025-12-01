@@ -20,13 +20,24 @@ class RouteRepositoryImpl implements RouteRepository {
   }
 
   @override
-  Future<Resource<List<Route>>> getAll() async {
-    final result = await _service.getAll();
+  Future<Resource<List<Route>>> getAll({
+    String? districtId,
+    String? driverId,
+    String? vehicleId,
+    String? status,
+    List<String>? statuses,
+  }) async {
+    final result = await _service.getAll(
+      districtId: districtId,
+      driverId: driverId,
+      vehicleId: vehicleId,
+      status: status,
+      statuses: statuses,
+    );
 
     return switch (result) {
-      Success(data: final dtoList) => Success(
-        dtoList.map((dto) => dto.toDomain()).toList(),
-      ),
+      Success(data: final dtoList) =>
+          Success(dtoList.map((dto) => dto.toDomain()).toList()),
       Failure(message: final msg, statusCode: final code) =>
           Failure(message: msg, statusCode: code),
     };
@@ -78,6 +89,16 @@ class RouteRepositoryImpl implements RouteRepository {
   Future<Resource<Route>> generateOptimizedWaypoints(String id) async {
     final result = await _service.generateOptimizedWaypoints(id);
 
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+          Failure(message: msg, statusCode: code),
+    };
+  }
+
+  @override
+  Future<Resource<Route>> startRoute(String routeId) async {
+    final result = await _service.startRoute(routeId);
     return switch (result) {
       Success(data: final dto) => Success(dto.toDomain()),
       Failure(message: final msg, statusCode: final code) =>

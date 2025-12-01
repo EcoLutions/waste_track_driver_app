@@ -6,16 +6,13 @@ import 'package:waste_track_driver_app/features/route_assignment/model/route_ass
 import 'package:waste_track_driver_app/shared/services/geocoding_service.dart';
 
 class WaypointBottomSheet extends StatefulWidget {
+
+  const WaypointBottomSheet({
+    required this.waypoint, required this.currentPosition, required this.onMarkAsCollected, super.key,
+  });
   final WayPointWithContainer waypoint;
   final Position? currentPosition;
   final VoidCallback onMarkAsCollected;
-
-  const WaypointBottomSheet({
-    super.key,
-    required this.waypoint,
-    required this.currentPosition,
-    required this.onMarkAsCollected,
-  });
 
   @override
   State<WaypointBottomSheet> createState() => _WaypointBottomSheetState();
@@ -85,10 +82,10 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.location_on,
                   color: AppColors.primary,
                   size: 28,
@@ -172,7 +169,7 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
                   label: const Text('Navegar'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: AppColors.primary),
+                    side: const BorderSide(color: AppColors.primary),
                     foregroundColor: AppColors.primary,
                   ),
                 ),
@@ -254,7 +251,7 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

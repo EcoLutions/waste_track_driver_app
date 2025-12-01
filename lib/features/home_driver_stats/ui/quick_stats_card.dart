@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-import 'package:waste_track_driver_app/shared/mock/mock_data_generator.dart';
 
 class QuickStatsCard extends StatelessWidget {
   const QuickStatsCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Datos mock de estadísticas
-    final completedRoutes = MockDataGenerator.generateCompletedRoutes(5);
-    final stats = MockDataGenerator.generateDriverStats(completedRoutes);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -20,7 +14,7 @@ class QuickStatsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -29,15 +23,15 @@ class QuickStatsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.analytics_outlined,
                 color: AppColors.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 'Resumen de Hoy',
                 style: TextStyle(
                   fontSize: 16,
@@ -53,7 +47,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Rutas',
-                  '${stats.totalRoutesCompleted}',
+                  '${10}',
                   Icons.route,
                   Colors.blue,
                 ),
@@ -63,7 +57,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Contenedores',
-                  '${stats.totalContainersCollected}',
+                  '${50}',
                   Icons.delete_outline,
                   Colors.orange,
                 ),
@@ -73,7 +67,7 @@ class QuickStatsCard extends StatelessWidget {
                 child: _buildStatItem(
                   context,
                   'Distancia',
-                  stats.formattedDistance,
+                  '${100} km',
                   Icons.straighten,
                   AppColors.primary,
                 ),
@@ -95,7 +89,7 @@ class QuickStatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
