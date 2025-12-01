@@ -1,25 +1,30 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:logger/logger.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/entities/waypoint/model/enums/waypoint_status.dart';
+import 'package:waste_track_driver_app/features/navigation/model/navigation_service.dart';
+import 'package:waste_track_driver_app/features/navigation/model/navigation_state.dart';
+import 'package:waste_track_driver_app/features/navigation/ui/navigation_instruction_panel.dart';
+import 'package:waste_track_driver_app/features/navigation/ui/next_waypoint_card.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
 import 'package:waste_track_driver_app/pages/route_map/widgets/route_progress_card.dart';
 import 'package:waste_track_driver_app/pages/route_map/widgets/waypoint_bottom_sheet.dart';
-import 'package:waste_track_driver_app/shared/services/directions_service.dart';
 import 'package:waste_track_driver_app/shared/services/location_service.dart';
 
 class RouteMapPage extends StatefulWidget {
   const RouteMapPage({
-    required this.routeId, super.key,
+    required this.routeId,
+    super.key,
   });
+
   final String routeId;
 
   @override
@@ -27,44 +32,43 @@ class RouteMapPage extends StatefulWidget {
 }
 
 class _RouteMapPageState extends State<RouteMapPage> {
-  GoogleMapController? _mapController;
+  final Logger _logger = Logger();
   final LocationService _locationService = LocationService();
-  final DirectionsService _directionsService = DirectionsService();
+  final NavigationService _navigationService = NavigationService();
 
-  Position? _currentPosition;
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
+  GoogleMapController? _mapController;
   StreamSubscription<Position>? _positionStream;
 
-  RouteAssignmentState? _currentRouteState;
-  WayPointWithContainer? _selectedWaypoint;
+  // Estado de navegación
+  NavigationState _navState = NavigationState.initial();
 
+  // Estado de UI
+  Set<Marker> _markers = {};
+  Set<Polyline> _polylines = {};
   bool _isLoadingMap = true;
+  bool _isLoadingDirections = false;
 
   @override
   void initState() {
     super.initState();
-    print('🗺️ RouteMapPage initState - routeId: ${widget.routeId}');
+    _logger.i('🗺️ RouteMapPage initState - routeId: ${widget.routeId}');
 
-    // ✅ NUEVO: Cargar la ruta activa si no está cargada
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureRouteLoaded();
+      _initializeLocation();
     });
-
-    _initializeLocation();
-    _startLocationTracking();
   }
 
-  // ✅ NUEVO: Método para asegurar que la ruta esté cargada
+  // ==================== INICIALIZACIÓN ====================
+
   void _ensureRouteLoaded() {
     final routeBloc = context.read<RouteAssignmentBloc>();
     final currentState = routeBloc.state;
 
-    print('📦 Current RouteAssignmentBloc state: ${currentState.runtimeType}');
+    _logger.d('📦 Current RouteAssignmentBloc state: ${currentState.runtimeType}');
 
-    // Si no hay ruta asignada, cargarla
     if (currentState is! RouteAssignmentAssigned) {
-      print('🔄 Route not loaded, loading now...');
+      _logger.i('🔄 Route not loaded, loading now...');
       final userSessionState = context.read<UserSessionBloc>().state;
 
       if (userSessionState.driver != null && userSessionState.district != null) {
@@ -73,32 +77,30 @@ class _RouteMapPageState extends State<RouteMapPage> {
           districtId: userSessionState.district!.id,
         ));
       } else {
-        print('❌ No driverId or districtId available');
+        _logger.e('❌ No driverId or districtId available');
       }
     } else {
-      print('✅ Route already loaded with ${currentState.waypoints.length} waypoints');
-      // Actualizar marcadores inmediatamente si ya hay ruta
-      _currentRouteState = currentState;
-      _updateMarkers();
+      _logger.i('✅ Route already loaded with ${currentState.waypoints.length} waypoints');
+      // ⭐ NO llamar aquí, esperar a tener ubicación
+      // Solo actualizar marcadores
+      _updateMarkers(currentState);
     }
   }
 
   Future<void> _initializeLocation() async {
-    print('📍 Initializing location...');
+    _logger.i('📍 Initializing location...');
 
     try {
-      // Verificar permisos primero
       final hasPermission = await _locationService.checkPermissions();
-      print('🔐 Location permission: $hasPermission');
+      _logger.d('🔐 Location permission: $hasPermission');
 
       if (!hasPermission) {
-        print('⚠️ Location permissions denied');
+        _logger.w('⚠️ Location permissions denied');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Se requieren permisos de ubicación para usar el mapa'),
+              content: Text('Se requieren permisos de ubicación'),
               backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
             ),
           );
         }
@@ -107,69 +109,99 @@ class _RouteMapPageState extends State<RouteMapPage> {
       }
 
       final position = await _locationService.getCurrentLocation();
-      print('📍 Current position: ${position?.latitude}, ${position?.longitude}');
+      _logger.d('📍 Current position: ${position?.latitude}, ${position?.longitude}');
 
       if (position != null && mounted) {
         setState(() {
-          _currentPosition = position;
+          _navState = _navState.copyWith(currentPosition: position);
           _isLoadingMap = false;
         });
+
         _updateCameraPosition(position);
+        _startLocationTracking();
+
+        // ⭐ AHORA SÍ: Cargar direcciones después de tener ubicación
+        final routeBloc = context.read<RouteAssignmentBloc>();
+        final currentState = routeBloc.state;
+
+        if (currentState is RouteAssignmentAssigned) {
+          _logger.i('✅ Location ready, loading directions...');
+          await _loadGoogleDirections(currentState);
+        }
       } else {
-        print('⚠️ Could not get current position');
+        _logger.w('⚠️ Could not get current position');
         setState(() => _isLoadingMap = false);
       }
     } catch (e) {
-      print('❌ Error initializing location: $e');
+      _logger.e('❌ Error initializing location: $e');
       setState(() => _isLoadingMap = false);
     }
   }
 
   void _startLocationTracking() {
-    print('🔄 Starting location tracking...');
+    _logger.i('🔄 Starting location tracking...');
+
     _positionStream = _locationService.startLocationTracking(
-      intervalSeconds: 60,
+      intervalSeconds: 5,
     ).listen((position) {
-      print('📍 Location update: ${position.latitude}, ${position.longitude}');
+      _logger.d('📍 Location update: ${position.latitude}, ${position.longitude}');
+
       if (mounted) {
         setState(() {
-          _currentPosition = position;
+          _navState = _navState.copyWith(currentPosition: position);
         });
-        _updateMarkers();
+
+        // Actualizar instrucción actual en modo navegación
+        if (_navState.isNavigationMode) {
+          _updateNavigationState();
+          _updateCameraPosition(position);
+        }
       }
     });
   }
 
-  void _updateCameraPosition(Position position) {
-    print('📹 Updating camera position to: ${position.latitude}, ${position.longitude}');
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        LatLng(position.latitude, position.longitude),
-        15,
-      ),
+  // ==================== ACTUALIZACIÓN DE ESTADO ====================
+
+  Future<void> _updateMarkersAndDirections(RouteAssignmentAssigned state) async {
+    _logger.i('📍 Updating markers and directions...');
+
+    // Obtener próximo waypoint
+    final nextWaypoint = _navigationService.getNextWaypoint(state.waypoints);
+
+    // Calcular distancia al próximo waypoint
+    final distanceToNext = _navigationService.calculateDistanceToWaypoint(
+      _navState.currentPosition,
+      nextWaypoint,
     );
+
+    setState(() {
+      _navState = _navState.copyWith(
+        nextWaypoint: nextWaypoint,
+        distanceToNextWaypoint: distanceToNext,
+      );
+    });
+
+    // Actualizar marcadores
+    _updateMarkers(state);
+
+    // Cargar direcciones de Google
+    await _loadGoogleDirections(state);
   }
 
-  Future<void> _updateMarkers() async {
-    print('📍 Updating markers...');
-
-    if (_currentRouteState is! RouteAssignmentAssigned) {
-      print('⚠️ No route assigned - cannot update markers');
-      return;
-    }
-
-    final state = _currentRouteState as RouteAssignmentAssigned;
-    print('✅ Route state: ${state.waypoints.length} waypoints');
+  void _updateMarkers(RouteAssignmentAssigned state) {
+    _logger.d('📍 Updating ${state.waypoints.length} markers');
 
     final markers = <Marker>{};
 
-    // Marcador de ubicación actual del conductor
-    if (_currentPosition != null) {
-      print('📍 Adding current location marker');
+    // Marcador de ubicación actual (solo en modo mapa completo)
+    if (_navState.currentPosition != null && !_navState.isNavigationMode) {
       markers.add(
         Marker(
           markerId: const MarkerId('current_location'),
-          position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          position: LatLng(
+            _navState.currentPosition!.latitude,
+            _navState.currentPosition!.longitude,
+          ),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
           infoWindow: const InfoWindow(title: 'Mi ubicación'),
         ),
@@ -177,19 +209,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
     }
 
     // Marcadores de waypoints
-    for (var i = 0; i < state.waypoints.length; i++) {
-      final waypoint = state.waypoints[i];
+    for (final waypoint in state.waypoints) {
       final container = waypoint.container;
-
-      print('📍 Adding waypoint marker ${i + 1}:');
-      print('   - Waypoint ID: ${waypoint.wayPoint.id}');
-      print('   - Container ID: ${container.id}');
-      print('   - Sequence: ${waypoint.wayPoint.sequenceOrder}');
-      print('   - Latitude: ${container.latitude}');
-      print('   - Longitude: ${container.longitude}');
-      print('   - Type: ${container.containerType.displayName}');
-      print('   - Fill: ${container.fillPercentage.toStringAsFixed(1)}%');
-      print('   - Status: ${waypoint.wayPoint.status}');
 
       markers.add(
         Marker(
@@ -199,7 +220,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
           onTap: () => _onWaypointTap(waypoint),
           infoWindow: InfoWindow(
             title: 'Punto ${waypoint.wayPoint.sequenceOrder}',
-            snippet: container.containerType.displayName,
+            snippet: '${container.containerType.displayName} - ${container.fillPercentage.toStringAsFixed(0)}%',
           ),
         ),
       );
@@ -209,11 +230,142 @@ class _RouteMapPageState extends State<RouteMapPage> {
       _markers = markers;
     });
 
-    print('✅ Markers updated: ${_markers.length} total markers');
-
-    // Obtener direcciones entre waypoints
-    await _loadDirections(state);
+    _logger.d('✅ Markers updated: ${_markers.length} total');
   }
+
+  Future<void> _loadGoogleDirections(RouteAssignmentAssigned state) async {
+    if (_navState.currentPosition == null) {
+      _logger.w('⚠️ Cannot load directions without current position');
+      return;
+    }
+
+    setState(() {
+      _isLoadingDirections = true;
+    });
+
+    _logger.i('🗺️ Loading Google Directions API...');
+
+    final directions = await _navigationService.loadDirections(
+      currentPosition: _navState.currentPosition!,
+      waypoints: state.waypoints,
+    );
+
+    if (directions != null && mounted) {
+      _logger.i('✅ Directions loaded successfully');
+
+      // Crear polyline con los puntos de la ruta
+      final polyline = Polyline(
+        polylineId: const PolylineId('route'),
+        points: directions.polylinePoints,
+        color: AppColors.primary,
+        width: 5,
+        patterns: [PatternItem.dot, PatternItem.gap(10)],
+      );
+
+      setState(() {
+        _navState = _navState.copyWith(directions: directions);
+        _polylines = {polyline};
+        _isLoadingDirections = false;
+      });
+
+      // Actualizar instrucción actual
+      _updateNavigationState();
+
+      // Ajustar cámara para mostrar toda la ruta (solo en modo mapa completo)
+      if (!_navState.isNavigationMode && _mapController != null) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(directions.bounds, 100),
+        );
+      }
+    } else {
+      _logger.e('❌ Failed to load directions');
+      setState(() {
+        _isLoadingDirections = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo cargar la ruta. Verifica tu conexión.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _updateNavigationState() {
+    final currentInstruction = _navigationService.getCurrentInstruction(
+      _navState.currentPosition,
+      _navState.directions,
+    );
+
+    if (currentInstruction != _navState.currentInstruction) {
+      setState(() {
+        _navState = _navState.copyWith(currentInstruction: currentInstruction);
+      });
+      _logger.d('🧭 Current instruction updated: ${currentInstruction?.instruction}');
+    }
+
+    // Actualizar distancia al próximo waypoint
+    final distanceToNext = _navigationService.calculateDistanceToWaypoint(
+      _navState.currentPosition,
+      _navState.nextWaypoint,
+    );
+
+    if (distanceToNext != _navState.distanceToNextWaypoint) {
+      setState(() {
+        _navState = _navState.copyWith(distanceToNextWaypoint: distanceToNext);
+      });
+    }
+  }
+
+  // ==================== CÁMARA Y NAVEGACIÓN ====================
+
+  void _updateCameraPosition(Position position) {
+    if (_mapController == null) return;
+
+    final zoom = _navState.isNavigationMode ? 18.0 : 15.0;
+    final tilt = _navState.isNavigationMode ? 45.0 : 0.0;
+    final bearing = _navState.isNavigationMode ? position.heading : 0.0;
+
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(position.latitude, position.longitude),
+          zoom: zoom,
+          tilt: tilt,
+          bearing: bearing,
+        ),
+      ),
+    );
+  }
+
+  void _toggleNavigationMode() {
+    _logger.i('🔄 Toggling navigation mode: ${!_navState.isNavigationMode}');
+
+    setState(() {
+      _navState = _navState.copyWith(isNavigationMode: !_navState.isNavigationMode);
+    });
+
+    // Actualizar cámara
+    if (_navState.currentPosition != null) {
+      _updateCameraPosition(_navState.currentPosition!);
+    }
+
+    // Si salimos de modo navegación, ajustar a mostrar toda la ruta
+    if (!_navState.isNavigationMode && _navState.directions != null) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_mapController != null && _navState.directions != null) {
+          _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(_navState.directions!.bounds, 100),
+          );
+        }
+      });
+    }
+  }
+
+  // ==================== MARCADORES Y WAYPOINTS ====================
 
   BitmapDescriptor _getMarkerIcon(WayPointStatus status) {
     switch (status) {
@@ -226,61 +378,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
     }
   }
 
-  Future<void> _loadDirections(RouteAssignmentAssigned state) async {
-    print('🗺️ Loading directions...');
-
-    if (state.waypoints.isEmpty || _currentPosition == null) {
-      print('⚠️ Cannot load directions - waypoints: ${state.waypoints.length}, currentPosition: $_currentPosition');
-      return;
-    }
-
-    // Crear lista de waypoints para la ruta
-    final waypoints = state.waypoints
-        .map((w) => LatLng(w.container.latitude, w.container.longitude))
-        .toList();
-
-    if (waypoints.isEmpty) {
-      print('⚠️ Waypoints list is empty');
-      return;
-    }
-
-    final origin = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-    final destination = waypoints.last;
-    final intermediatePoints = waypoints.sublist(0, waypoints.length - 1);
-
-    print('🗺️ Origin: ${origin.latitude}, ${origin.longitude}');
-    print('🗺️ Destination: ${destination.latitude}, ${destination.longitude}');
-    print('🗺️ Intermediate points: ${intermediatePoints.length}');
-
-    // Obtener direcciones
-    final result = await _directionsService.getDirections(
-      origin: origin,
-      destination: destination,
-      waypoints: intermediatePoints,
-    );
-
-    if (result != null && mounted) {
-      print('✅ Directions loaded: ${result.polylinePoints.length} points');
-      setState(() {
-        _polylines = {
-          Polyline(
-            polylineId: const PolylineId('route'),
-            points: result.polylinePoints,
-            color: AppColors.primary,
-            width: 5,
-          ),
-        };
-      });
-    } else {
-      print('⚠️ Could not load directions');
-    }
-  }
-
   void _onWaypointTap(WayPointWithContainer waypoint) {
-    print('👆 Waypoint tapped: ${waypoint.wayPoint.id}');
-    setState(() {
-      _selectedWaypoint = waypoint;
-    });
+    _logger.d('👆 Waypoint tapped: ${waypoint.wayPoint.id}');
 
     showModalBottomSheet(
       context: context,
@@ -288,7 +387,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => WaypointBottomSheet(
         waypoint: waypoint,
-        currentPosition: _currentPosition,
+        currentPosition: _navState.currentPosition,
         onMarkAsCollected: () {
           _markWaypointAsCollected(waypoint);
           Navigator.pop(context);
@@ -298,9 +397,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
   }
 
   void _markWaypointAsCollected(WayPointWithContainer waypoint) {
-    print('✅ Marking waypoint as collected: ${waypoint.wayPoint.id}');
+    _logger.i('✅ Marking waypoint as collected: ${waypoint.wayPoint.id}');
 
-    // Disparar el evento para marcar como visitado en el backend
     context.read<RouteAssignmentBloc>().add(
       MarkWaypointAsVisited(waypointId: waypoint.wayPoint.id),
     );
@@ -308,63 +406,71 @@ class _RouteMapPageState extends State<RouteMapPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Punto ${waypoint.wayPoint.sequenceOrder} marcado como recolectado'),
-        backgroundColor: AppColors.success,
+        backgroundColor: Colors.green,
       ),
     );
   }
 
+  // ==================== LIFECYCLE ====================
+
   @override
   void dispose() {
-    print('🧹 RouteMapPage disposing...');
+    _logger.i('🧹 RouteMapPage disposing...');
     _positionStream?.cancel();
     _locationService.stopLocationTracking();
     _mapController?.dispose();
     super.dispose();
   }
 
+  // ==================== BUILD ====================
+
   @override
   Widget build(BuildContext context) {
-    print('🎨 Building RouteMapPage');
-    print('🎨 Current position: $_currentPosition');
-    print('🎨 Markers count: ${_markers.length}');
-    print('🎨 Polylines count: ${_polylines.length}');
-
     return Scaffold(
       body: BlocConsumer<RouteAssignmentBloc, RouteAssignmentState>(
         listener: (context, state) {
-          print('📡 RouteAssignmentBloc state changed: ${state.runtimeType}');
+          _logger.d('📡 RouteAssignmentBloc state changed: ${state.runtimeType}');
+
           if (state is RouteAssignmentAssigned) {
-            print('✅ Route assigned with ${state.waypoints.length} waypoints');
-            _currentRouteState = state;
-            _updateMarkers();
+            _logger.i('✅ Route assigned with ${state.waypoints.length} waypoints');
+
+            if (_navState.currentPosition != null) {
+              _updateMarkersAndDirections(state);
+            } else {
+              _logger.w('⚠️ Waiting for location before loading directions...');
+              _updateMarkers(state);
+            }
           }
         },
         builder: (context, state) {
           return Stack(
             children: [
-              // Mapa de Google
+              // ==================== MAPA ====================
               GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target: _currentPosition != null
-                      ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                      : const LatLng(-12.1199, -77.0340), // Lima, Perú
+                  target: _navState.currentPosition != null
+                      ? LatLng(
+                    _navState.currentPosition!.latitude,
+                    _navState.currentPosition!.longitude,
+                  )
+                      : const LatLng(-12.0464, -77.0428), // Lima, Perú
                   zoom: 14,
                 ),
                 markers: _markers,
                 polylines: _polylines,
                 myLocationEnabled: true,
-                myLocationButtonEnabled: true,
+                myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 compassEnabled: true,
                 mapToolbarEnabled: false,
                 onMapCreated: (controller) {
-                  print('✅ Google Map created successfully!');
+                  _logger.i('✅ Google Map created');
                   _mapController = controller;
                   setState(() => _isLoadingMap = false);
                 },
               ),
 
-              // Indicador de carga del mapa
+              // ==================== LOADING MAP ====================
               if (_isLoadingMap)
                 Container(
                   color: Colors.white,
@@ -374,17 +480,76 @@ class _RouteMapPageState extends State<RouteMapPage> {
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 16),
+                        Text('Cargando mapa...'),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // ==================== LOADING DIRECTIONS ====================
+              if (_isLoadingDirections)
+                Positioned(
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
                         Text(
-                          'Cargando mapa...',
-                          style: TextStyle(fontSize: 16),
+                          'Cargando ruta desde Google Maps...',
+                          style: TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-              // Card de progreso de ruta
-              if (state is RouteAssignmentAssigned)
+              // ==================== MODO NAVEGACIÓN ====================
+              if (_navState.isNavigationMode && !_isLoadingDirections) ...[
+                // Panel de instrucciones
+                if (_navState.currentInstruction != null)
+                  Positioned(
+                    top: 60,
+                    left: 0,
+                    right: 0,
+                    child: NavigationInstructionPanel(
+                      instruction: _navState.currentInstruction!,
+                    ),
+                  ),
+
+                // Card del próximo waypoint
+                if (_navState.nextWaypoint != null)
+                  Positioned(
+                    bottom: 160,
+                    left: 0,
+                    right: 0,
+                    child: NextWaypointCard(
+                      waypoint: _navState.nextWaypoint!,
+                      distanceToWaypoint: _navState.distanceToNextWaypoint,
+                    ),
+                  ),
+              ],
+
+              // ==================== MODO MAPA COMPLETO ====================
+              if (!_navState.isNavigationMode && state is RouteAssignmentAssigned)
                 Positioned(
                   top: 60,
                   left: 16,
@@ -395,19 +560,68 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   ),
                 ),
 
-              // Botón de regresar (debajo de la card)
+              // ==================== BOTÓN REGRESAR ====================
               Positioned(
-                top: 200,
+                top: _navState.isNavigationMode ? 200 : 200,
                 left: 16,
                 child: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () {
-                      print('⬅️ Back button pressed');
-                      Navigator.pop(context);
-                    },
+                    onPressed: () => Navigator.pop(context),
                   ),
+                ),
+              ),
+
+              // ==================== CONTROLES DE NAVEGACIÓN ====================
+              Positioned(
+                bottom: 30,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Botón Mi Ubicación
+                    FloatingActionButton(
+                      heroTag: 'location',
+                      backgroundColor: Colors.white,
+                      mini: true,
+                      onPressed: () {
+                        if (_navState.currentPosition != null) {
+                          _updateCameraPosition(_navState.currentPosition!);
+                        }
+                      },
+                      child: const Icon(
+                        Icons.my_location,
+                        color: AppColors.primary,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Toggle Navegación/Mapa
+                    FloatingActionButton.extended(
+                      heroTag: 'navigation',
+                      backgroundColor: _navState.isNavigationMode
+                          ? AppColors.primary
+                          : Colors.white,
+                      onPressed: _toggleNavigationMode,
+                      icon: Icon(
+                        _navState.isNavigationMode ? Icons.map : Icons.navigation,
+                        color: _navState.isNavigationMode
+                            ? Colors.white
+                            : AppColors.primary,
+                      ),
+                      label: Text(
+                        _navState.isNavigationMode ? 'Ver Mapa' : 'Navegar',
+                        style: TextStyle(
+                          color: _navState.isNavigationMode
+                              ? Colors.white
+                              : AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -105,16 +105,6 @@ class AppRouter {
             ),
           ],
         ),
-
-        GoRoute(
-          path: '/route-active',
-          name: 'route-active',
-          builder: (context, state) => const Scaffold(
-            body: Center(
-              child: Text('Route Active Page - TODO'),
-            ),
-          ),
-        ),
         GoRoute(
           path: '/route-map/:id',
           name: 'route-map',
