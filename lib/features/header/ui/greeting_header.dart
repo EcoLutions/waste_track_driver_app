@@ -64,10 +64,10 @@ class _GreetingHeaderState extends State<GreetingHeader>
         // Greeting dependiendo de la hora
         final hour = DateTime.now().hour;
         final greeting = hour < 12
-            ? "Buenos días"
+            ? 'Buenos días'
             : hour < 18
-            ? "Buenas tardes"
-            : "Buenas noches";
+            ? 'Buenas tardes'
+            : 'Buenas noches';
 
         return FadeTransition(
           opacity: _fade,

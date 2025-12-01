@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
-import 'package:waste_track_driver_app/entities/route/model/entities/route.dart';
 import 'package:waste_track_driver_app/entities/route/model/entities/route.dart' as rt;
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
 
 class RouteProgressCard extends StatelessWidget {
+  const RouteProgressCard({
+    required this.route, required this.waypoints, super.key,
+  });
   final rt.Route route;
   final List<WayPointWithContainer> waypoints;
-
-  const RouteProgressCard({
-    super.key,
-    required this.route,
-    required this.waypoints,
-  });
 
   @override
   Widget build(BuildContext context) {

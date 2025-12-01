@@ -4,12 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/user_session/user_session_state.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
+import 'package:waste_track_driver_app/features/home_driver_stats/ui/quick_stats_card.dart';
 import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
 import 'package:waste_track_driver_app/features/home_route/model/home_route_event.dart';
 import 'package:waste_track_driver_app/features/home_route/model/home_route_state.dart';
 import 'package:waste_track_driver_app/features/home_route/ui/active_route_modal.dart';
-import 'package:waste_track_driver_app/features/header/ui/greeting_header.dart';
-import 'package:waste_track_driver_app/features/home_driver_stats/ui/quick_stats_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
