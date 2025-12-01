@@ -5,7 +5,7 @@ class ApiConstants {
   static String get baseUrl {
     if (kDebugMode) {
       // Development (Android Emulator)
-      return 'http://localhost:8080/api/v1';
+      return 'http://10.0.2.2:8080/api/v1';
     } else {
       // Production
       return 'https://api.ecolucions.com/api/v1';
