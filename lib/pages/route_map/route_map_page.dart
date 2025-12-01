@@ -112,7 +112,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
           _isLoadingMap = false;
         });
 
-        _updateCameraPosition(position);
         _startLocationTracking();
 
         final routeBloc = context.read<RouteAssignmentBloc>();
@@ -121,6 +120,10 @@ class _RouteMapPageState extends State<RouteMapPage> {
         if (currentState is RouteAssignmentAssigned) {
           _logger.i('Location ready, loading directions...');
           await _loadGoogleDirections(currentState);
+
+          // Enfocar en el primer waypoint pendiente
+          await Future.delayed(const Duration(milliseconds: 500));
+          _focusOnNextWaypoint();
         }
       } else {
         _logger.w('Could not get current position');
@@ -184,6 +187,10 @@ class _RouteMapPageState extends State<RouteMapPage> {
     if (_navState.currentPosition != null) {
       await _loadGoogleDirections(state);
     }
+
+    // Enfocar en el siguiente waypoint después de actualizar
+    await Future.delayed(const Duration(milliseconds: 300));
+    _focusOnNextWaypoint();
   }
 
   void _updateMarkers(RouteAssignmentAssigned state) {
@@ -354,6 +361,34 @@ class _RouteMapPageState extends State<RouteMapPage> {
     );
   }
 
+  /// Enfoca la cámara en el siguiente waypoint pendiente
+  /// con la cámara posicionada de manera que el waypoint aparezca en la parte inferior
+  void _focusOnNextWaypoint() {
+    if (_mapController == null || _navState.nextWaypoint == null) return;
+
+    final nextWaypoint = _navState.nextWaypoint!;
+    final waypointLat = nextWaypoint.container.latitude;
+    final waypointLng = nextWaypoint.container.longitude;
+
+    // Offset para que el waypoint aparezca en la parte inferior del mapa
+    // Ajustamos la latitud hacia arriba para centrar el waypoint en la parte inferior
+    const latOffset = 0.002; // aproximadamente 200 metros hacia el norte
+    final adjustedLat = waypointLat + latOffset;
+
+    _logger.i('📍 Enfocando en el siguiente waypoint #${nextWaypoint.sequenceOrder}');
+
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(adjustedLat, waypointLng),
+          zoom: 16.5,
+          tilt: 0.0,
+          bearing: 0.0,
+        ),
+      ),
+    );
+  }
+
   void _toggleNavigationMode() {
     _logger.i('Toggling navigation mode: ${!_navState.isNavigationMode}');
 
@@ -394,7 +429,30 @@ class _RouteMapPageState extends State<RouteMapPage> {
   }
 
   void _onWaypointTap(WayPointWithContainer waypoint) {
-    _logger.d(' Waypoint tapped: ${waypoint.wayPoint.id}');
+    _logger.d('Waypoint tapped: ${waypoint.wayPoint.id}');
+
+    // Obtener el siguiente waypoint directamente del BLoC state
+    final routeBloc = context.read<RouteAssignmentBloc>();
+    final currentState = routeBloc.state;
+
+    WayPointWithContainer? nextWaypoint;
+    if (currentState is RouteAssignmentAssigned) {
+      // Obtener el primer waypoint pendiente
+      nextWaypoint = _navigationService.getNextWaypoint(currentState.waypoints);
+
+      // 🐛 DEBUG: Mostrar todos los waypoints y sus estados
+      _logger.i('🔍 DEBUG - Total waypoints: ${currentState.waypoints.length}');
+      for (var w in currentState.waypoints) {
+        _logger.i('   Waypoint #${w.wayPoint.sequenceOrder}: ${w.wayPoint.status} (id: ${w.wayPoint.id})');
+      }
+      _logger.i('🎯 Next waypoint: #${nextWaypoint?.wayPoint.sequenceOrder} (id: ${nextWaypoint?.wayPoint.id})');
+      _logger.i('👆 Tapped waypoint: #${waypoint.wayPoint.sequenceOrder} (id: ${waypoint.wayPoint.id})');
+    }
+
+    // Determinar si este waypoint es el siguiente en secuencia
+    final isNextInSequence = nextWaypoint?.wayPoint.id == waypoint.wayPoint.id;
+
+    _logger.i('✅ isNextInSequence: $isNextInSequence');
 
     showModalBottomSheet(
       context: context,
@@ -403,6 +461,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
       builder: (context) => WaypointBottomSheet(
         waypoint: waypoint,
         currentPosition: _navState.currentPosition,
+        isNextInSequence: isNextInSequence,
         onMarkAsCollected: () {
           _markWaypointAsCollected(waypoint);
           Navigator.pop(context);
@@ -424,6 +483,208 @@ class _RouteMapPageState extends State<RouteMapPage> {
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  /// Mostrar diálogo de confirmación antes de marcar como recolectado
+  void _showConfirmationDialog(WayPointWithContainer waypoint) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: AppColors.primary, size: 28),
+            SizedBox(width: 12),
+            Text('Confirmar Recolección'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿Confirmas que has recolectado el contenedor en este punto?',
+              style: TextStyle(fontSize: 15, color: Colors.grey[800]),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Punto #${waypoint.wayPoint.sequenceOrder}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    waypoint.container.containerType.displayName,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Llenado: ${waypoint.container.fillPercentage.toStringAsFixed(0)}%',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Cerrar diálogo
+              _markWaypointAsCollected(waypoint); // Marcar como recolectado
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Verificar si todos los waypoints están completados
+  bool _areAllWaypointsCompleted(RouteAssignmentAssigned state) {
+    return state.waypoints.every((w) => w.wayPoint.status == WayPointStatus.visited);
+  }
+
+  /// Mostrar diálogo de finalización de ruta
+  void _showCompleteRouteDialog(RouteAssignmentAssigned state) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: AppColors.success,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                '¡Ruta Completada!',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Has completado todos los puntos de recolección de esta ruta.',
+              style: TextStyle(fontSize: 15),
+            ),
+            const SizedBox(height: 16),
+            _buildRouteSummary(state),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Cerrar diálogo
+            },
+            child: const Text('Ver Resumen'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Cerrar diálogo
+              Navigator.pop(context); // Volver a la pantalla anterior
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Finalizar Ruta'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRouteSummary(RouteAssignmentAssigned state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          _buildSummaryRow(
+            Icons.check_circle_outline,
+            'Puntos completados',
+            '${state.waypoints.length}',
+            AppColors.success,
+          ),
+          const SizedBox(height: 8),
+          _buildSummaryRow(
+            Icons.straighten,
+            'Distancia total',
+            state.route.formattedTotalDistance,
+            AppColors.primary,
+          ),
+          const SizedBox(height: 8),
+          _buildSummaryRow(
+            Icons.access_time,
+            'Tiempo estimado',
+            state.route.formattedEstimatedDuration,
+            AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 
@@ -451,6 +712,16 @@ class _RouteMapPageState extends State<RouteMapPage> {
             } else {
               _logger.w('Waiting for location before loading directions...');
               _updateMarkers(state);
+            }
+
+            // Verificar si todos los waypoints están completados
+            if (_areAllWaypointsCompleted(state)) {
+              _logger.i('🎉 All waypoints completed!');
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _showCompleteRouteDialog(state);
+                }
+              });
             }
           }
         },
@@ -558,14 +829,60 @@ class _RouteMapPageState extends State<RouteMapPage> {
                 ),
 
               if (_navState.nextWaypoint != null && !_isLoadingDirections)
-                Positioned(
-                  bottom: 160,
-                  left: 0,
-                  right: 0,
-                  child: NextWaypointCard(
-                    waypoint: _navState.nextWaypoint!,
-                    distanceToWaypoint: _navState.distanceToNextWaypoint,
-                  ),
+                DraggableScrollableSheet(
+                  initialChildSize: 0.35, // 35% de la pantalla
+                  minChildSize: 0.08, // Minimizado: 8%
+                  maxChildSize: 0.4, // Máximo: 40%
+                  snap: true,
+                  snapSizes: const [0.08, 0.35],
+                  builder: (context, scrollController) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 20,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: ListView(
+                        controller: scrollController,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          // Handle indicator
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 12, bottom: 8),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+
+                          // Contenido del card con botón
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                            child: NextWaypointCard(
+                              waypoint: _navState.nextWaypoint!,
+                              distanceToWaypoint: _navState.distanceToNextWaypoint,
+                              onMarkAsCollected: () {
+                                _showConfirmationDialog(_navState.nextWaypoint!);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
               Positioned(

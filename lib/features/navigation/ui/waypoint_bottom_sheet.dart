@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
+import 'package:waste_track_driver_app/entities/waypoint/model/enums/waypoint_status.dart';
 import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
 import 'package:waste_track_driver_app/shared/services/geocoding_service.dart';
 
 class WaypointBottomSheet extends StatefulWidget {
-
   const WaypointBottomSheet({
-    required this.waypoint, required this.currentPosition, required this.onMarkAsCollected, super.key,
+    required this.waypoint,
+    required this.currentPosition,
+    required this.onMarkAsCollected,
+    required this.isNextInSequence,
+    super.key,
   });
+
   final WayPointWithContainer waypoint;
   final Position? currentPosition;
   final VoidCallback onMarkAsCollected;
+  final bool isNextInSequence; // TRUE si es el siguiente waypoint a recolectar
 
   @override
   State<WaypointBottomSheet> createState() => _WaypointBottomSheetState();
@@ -43,11 +48,37 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
     }
   }
 
+  String _getContextMessage() {
+    final status = widget.waypoint.wayPoint.status;
+    final sequenceOrder = widget.waypoint.wayPoint.sequenceOrder;
+
+    if (status == WayPointStatus.visited) {
+      return '✅ Punto completado';
+    } else if (widget.isNextInSequence) {
+      return '📍 Siguiente punto a recolectar';
+    } else {
+      return '⏳ Este punto será el #$sequenceOrder en tu ruta';
+    }
+  }
+
+  Color _getContextColor() {
+    final status = widget.waypoint.wayPoint.status;
+
+    if (status == WayPointStatus.visited) {
+      return AppColors.success;
+    } else if (widget.isNextInSequence) {
+      return AppColors.primary;
+    } else {
+      return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final container = widget.waypoint.container;
     final waypointData = widget.waypoint.wayPoint;
     final fillPercentage = container.fillPercentage;
+    final isCompleted = waypointData.status == WayPointStatus.visited;
 
     return Container(
       decoration: const BoxDecoration(
@@ -118,7 +149,45 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Mensaje contextual
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _getContextColor().withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _getContextColor().withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.isNextInSequence
+                      ? Icons.navigation
+                      : isCompleted
+                      ? Icons.check_circle
+                      : Icons.info_outline,
+                  size: 18,
+                  color: _getContextColor(),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _getContextMessage(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _getContextColor(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
 
           // Dirección
           _buildInfoRow(
@@ -126,7 +195,8 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
             'Dirección',
             _loadingAddress
                 ? 'Cargando...'
-                : _address ?? 'Lat: ${container.latitude.toStringAsFixed(6)}, Lng: ${container.longitude.toStringAsFixed(6)}',
+                : _address ??
+                'Lat: ${container.latitude.toStringAsFixed(6)}, Lng: ${container.longitude.toStringAsFixed(6)}',
           ),
 
           const SizedBox(height: 16),
@@ -159,44 +229,6 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
 
           const SizedBox(height: 24),
 
-          // Botones de acción
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _openInMaps(context),
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Navegar'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.primary),
-                    foregroundColor: AppColors.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: waypointData.isCompleted ? null : widget.onMarkAsCollected,
-                  icon: Icon(
-                    waypointData.isCompleted
-                        ? Icons.check_circle
-                        : Icons.check_circle_outline,
-                  ),
-                  label: Text(
-                    waypointData.isCompleted ? 'Completado' : 'Marcar',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor:
-                        waypointData.isCompleted ? Colors.grey : AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
         ],
       ),
@@ -204,11 +236,11 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
   }
 
   Widget _buildInfoRow(
-    IconData icon,
-    String label,
-    String value, {
-    Widget? trailing,
-  }) {
+      IconData icon,
+      String label,
+      String value, {
+        Widget? trailing,
+      }) {
     return Row(
       children: [
         Icon(icon, size: 20, color: Colors.grey[600]),
@@ -224,11 +256,14 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
         if (trailing != null)
           trailing
         else
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.right,
             ),
           ),
       ],
@@ -309,22 +344,6 @@ class _WaypointBottomSheetState extends State<WaypointBottomSheet> {
       return '${distance.toStringAsFixed(0)} m';
     } else {
       return '${(distance / 1000).toStringAsFixed(2)} km';
-    }
-  }
-
-  Future<void> _openInMaps(BuildContext context) async {
-    final lat = widget.waypoint.container.latitude;
-    final lng = widget.waypoint.container.longitude;
-    final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
-
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir Google Maps')),
-        );
-      }
     }
   }
 }
