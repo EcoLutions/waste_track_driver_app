@@ -17,4 +17,5 @@ abstract class RouteService {
   Future<Resource<RouteResponse>> update(String id, UpdateRouteRequest request);
   Future<Resource<void>> delete(String id);
   Future<Resource<RouteResponse>> generateOptimizedWaypoints(String id);
+  Future<Resource<RouteResponse>> startRoute(String routeId);
 }

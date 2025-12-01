@@ -16,6 +16,8 @@ sealed class RouteResponse with _$RouteResponse {
     String? scheduledEndAt,
     String? startedAt,
     String? completedAt,
+    int? totalWaypoints,
+    int? totalCompletedWaypoints,
     String? totalDistance,
     String? estimatedDuration,
     String? collectionDuration,

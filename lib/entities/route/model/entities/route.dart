@@ -11,6 +11,8 @@ sealed class Route with _$Route {
     required String vehicleId,
     required String driverId,
     required RouteStatus status,
+    required int totalWaypoints,
+    required int totalCompletedWaypoints,
     required DateTime scheduledStartAt,
     required DateTime createdAt,
     @Default(0.0) double totalDistance,

@@ -6,4 +6,6 @@ abstract class HomeRouteRepository {
     required String driverId,
     required String districtId,
   });
+
+  Future<Resource<Route?>> startRoute({required String routeId});
 }

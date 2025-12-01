@@ -117,13 +117,7 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: ActiveRouteModal(
                             route: state.route,
-                            waypoints: const [], // HomePage no necesita waypoints detallados
-                            onTap: () {
-                              // Navegar al mapa de ruta (usa RouteAssignmentBloc)
-                              context.push('/route-map/${state.route.id}');
-                            },
                             onStartRoute: () {
-                              // Navegar al mapa para generar waypoints
                               context.push('/route-map/${state.route.id}');
                             },
                           ),

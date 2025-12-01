@@ -107,4 +107,14 @@ class RouteServiceImpl implements RouteService {
           (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  @override
+  Future<Resource<RouteResponse>> startRoute(String routeId) {
+    return _dioClient.handleRequest(
+          () => _dioClient.dio.post(
+        '${ApiConstants.baseUrl}/routes/$routeId/start',
+      ),
+          (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

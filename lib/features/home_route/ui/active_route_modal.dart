@@ -1,34 +1,31 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/entities/route/model/entities/route.dart' as rt;
 import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_event.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_state.dart';
+import 'package:waste_track_driver_app/features/home_route/home_route.dart';
 
 class ActiveRouteModal extends StatelessWidget {
   const ActiveRouteModal({
-    required this.route, required this.waypoints, required this.onTap, super.key,
+    required this.route, super.key,
     this.onStartRoute,
   });
 
   final rt.Route route;
-  final List<WayPointWithContainer> waypoints;
-  final VoidCallback onTap;
   final VoidCallback? onStartRoute;
 
   @override
   Widget build(BuildContext context) {
-    final completed = waypoints.where((w) => w.wayPoint.isCompleted).length;
-    final total = waypoints.length;
+    final total = route.totalWaypoints;
+    final completed = route.totalCompletedWaypoints;
     final double progress = total > 0 ? (completed / total).toDouble() : 0.0;
 
     return GestureDetector(
-      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.all(16),
         child: ClipRRect(
@@ -95,7 +92,7 @@ class ActiveRouteModal extends StatelessWidget {
                             Text(
                               route.status == RouteStatus.inProgress
                                   ? 'Ruta en Progreso'
-                                  : 'Ruta Asignada',
+                                  : 'Ruta Activa',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -114,7 +111,6 @@ class ActiveRouteModal extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
                     ],
                   ),
 
@@ -133,7 +129,6 @@ class ActiveRouteModal extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // BOTÓN PRINCIPAL
                   _buildActionButton(context),
                 ],
             ),
@@ -167,19 +162,18 @@ class ActiveRouteModal extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
-    final isAssigned = route.status == RouteStatus.planned;
+    final isActive = route.status == RouteStatus.active;
 
     return GestureDetector(
       onTapDown: (_) {},
       onTap: () {
-        if (isAssigned) {
+        if (isActive) {
           onStartRoute?.call();
-          context.read<RouteAssignmentBloc>().add(
-            GenerateWaypoints(routeId: route.id),
+          context.read<HomeRouteBloc>().add(
+            StartRoute(routeId: route.id),
           );
-        } else {
-          onTap();
         }
+        context.push('/route-map/${route.id}');
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -202,7 +196,7 @@ class ActiveRouteModal extends StatelessWidget {
             const Icon(Icons.map_rounded, color: Colors.white),
             const SizedBox(width: 8),
             Text(
-              isAssigned ? 'Iniciar Ruta' : 'Ver Mapa de Ruta',
+              isActive ? 'Iniciar Ruta' : 'Ver Mapa de Ruta',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,

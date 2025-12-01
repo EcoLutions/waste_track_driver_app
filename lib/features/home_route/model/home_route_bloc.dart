@@ -17,6 +17,7 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
     on<LoadActiveRoute>(_onLoadActiveRoute);
     on<RefreshActiveRoute>(_onRefreshActiveRoute);
     on<ClearRoute>(_onClearRoute);
+    on<StartRoute>(_onStartRoute);
     on<RouteActivatedFromWebSocket>(_onRouteActivatedFromWebSocket);
 
     _webSocketSubscription = AppEventBus().on<RouteActivated>().listen(
@@ -37,12 +38,7 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
   String? _currentDriverId;
   String? _currentDistrictId;
 
-  // ==================== LOAD ACTIVE ROUTE ====================
-
-  Future<void> _onLoadActiveRoute(
-      LoadActiveRoute event,
-      Emitter<HomeRouteState> emit,
-      ) async {
+  Future<void> _onLoadActiveRoute(LoadActiveRoute event, Emitter<HomeRouteState> emit,) async {
     _logger.i('[HomeRouteBloc] Loading active route for driver: ${event.driverId}');
 
     _currentDriverId = event.driverId;
@@ -72,7 +68,6 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
 
             emit(HomeRouteState.found(
               route: route,
-              hasWaypoints: hasWaypoints,
             ));
           }
           break;
@@ -89,12 +84,7 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
     }
   }
 
-  // ==================== REFRESH ACTIVE ROUTE ====================
-
-  Future<void> _onRefreshActiveRoute(
-      RefreshActiveRoute event,
-      Emitter<HomeRouteState> emit,
-      ) async {
+  Future<void> _onRefreshActiveRoute(RefreshActiveRoute event, Emitter<HomeRouteState> emit,) async {
     _logger.i('[HomeRouteBloc] Refreshing active route');
 
     _currentDriverId = event.driverId;
@@ -122,11 +112,8 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
             _logger.i('[HomeRouteBloc] Route refreshed: ${route.id}');
             _stopWebSocketListener();
 
-            final hasWaypoints = route.totalDistance > 0;
-
             emit(HomeRouteState.found(
               route: route,
-              hasWaypoints: hasWaypoints,
             ));
           }
           break;
@@ -143,12 +130,44 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
     }
   }
 
-  // ==================== ROUTE ACTIVATED FROM WEBSOCKET ====================
+  Future<void> _onStartRoute(StartRoute event, Emitter<HomeRouteState> emit,) async {
+    _logger.i('[HomeRouteBloc] Starting route: ${event.routeId}');
 
-  Future<void> _onRouteActivatedFromWebSocket(
-      RouteActivatedFromWebSocket event,
-      Emitter<HomeRouteState> emit,
-      ) async {
+    final shouldShowLoading = state is! HomeRouteFound;
+
+    if (shouldShowLoading) {
+      emit(const HomeRouteState.loading());
+    }
+
+    try {
+      final result = await _homeRouteRepository.startRoute(routeId: event.routeId);
+
+      switch (result) {
+        case Success(data: final route):
+          if (route == null) {
+            _logger.e('[HomeRouteBloc] Error starting route: No route found');
+            emit(const HomeRouteState.error('No route found'));
+          } else {
+            _logger.i('[HomeRouteBloc] Route started: ${route.id}');
+            emit(HomeRouteState.found(
+              route: route,
+            ));
+          }
+          break;
+        case Failure(message: final msg):
+          _logger.e('[HomeRouteBloc] Error starting route: $msg');
+          emit(HomeRouteState.error(msg));
+          break;
+      }
+    } catch (e, stackTrace) {
+      _logger.e('[HomeRouteBloc] Exception in _onStartRoute: $e');
+      _logger.e('StackTrace: $stackTrace');
+      emit(HomeRouteState.error('Error inesperado: $e'));
+    }
+
+  }
+
+  Future<void> _onRouteActivatedFromWebSocket(RouteActivatedFromWebSocket event, Emitter<HomeRouteState> emit,) async {
     _logger.i('[HomeRouteBloc] Processing RouteActivated from WebSocket: ${event.routeId}');
 
     // Verificar que el evento es para el driver correcto
@@ -174,18 +193,11 @@ class HomeRouteBloc extends Bloc<HomeRouteEvent, HomeRouteState> {
     }
   }
 
-  // ==================== CLEAR ROUTE ====================
-
-  Future<void> _onClearRoute(
-      ClearRoute event,
-      Emitter<HomeRouteState> emit,
-      ) async {
+  Future<void> _onClearRoute(ClearRoute event, Emitter<HomeRouteState> emit,) async {
     _logger.i('[HomeRouteBloc] Clearing route');
     _stopWebSocketListener();
     emit(const HomeRouteState.notFound());
   }
-
-  // ==================== WEBSOCKET MANAGEMENT ====================
 
   void _startWebSocketListener(String driverId) {
     _logger.i('[HomeRouteBloc] Starting WebSocket listener for driver: $driverId');

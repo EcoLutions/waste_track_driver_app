@@ -14,5 +14,6 @@ abstract class RouteRepository {
   Future<Resource<Route>> create(Route route);
   Future<Resource<Route>> update(Route route);
   Future<Resource<void>> delete(String id);
+  Future<Resource<Route>> startRoute(String routeId);
   Future<Resource<Route>> generateOptimizedWaypoints(String id);
 }

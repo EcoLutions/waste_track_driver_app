@@ -12,8 +12,7 @@ sealed class HomeRouteState with _$HomeRouteState {
   const factory HomeRouteState.notFound() = HomeRouteNotFound;
 
   const factory HomeRouteState.found({
-    required Route route,
-    required bool hasWaypoints,
+    required Route route
   }) = HomeRouteFound;
 
   const factory HomeRouteState.error(String message) = HomeRouteError;
@@ -27,10 +26,5 @@ extension HomeRouteStateX on HomeRouteState {
   Route? get route => switch (this) {
     HomeRouteFound(route: final r) => r,
     _ => null,
-  };
-
-  bool get canGenerateWaypoints => switch (this) {
-    HomeRouteFound(hasWaypoints: final has) => !has,
-    _ => false,
   };
 }

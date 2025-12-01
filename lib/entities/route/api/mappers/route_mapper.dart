@@ -16,6 +16,8 @@ extension RouteResponseMapper on RouteResponse {
       scheduledEndAt: _parseDateOrNull(scheduledEndAt),
       startedAt: _parseDateOrNull(startedAt),
       completedAt: _parseDateOrNull(completedAt),
+      totalWaypoints: totalWaypoints ?? 0,
+      totalCompletedWaypoints: totalCompletedWaypoints ?? 0,
       totalDistance: _parseDouble(totalDistance),
       estimatedDuration: _parseDuration(estimatedDuration),
       collectionDuration: _parseDuration(collectionDuration),

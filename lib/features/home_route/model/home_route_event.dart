@@ -37,6 +37,16 @@ final class ClearRoute extends HomeRouteEvent {
   const ClearRoute();
 }
 
+final class StartRoute extends HomeRouteEvent {
+  const StartRoute({
+    required this.routeId,
+  });
+  final String routeId;
+
+  @override
+  List<Object?> get props => [routeId];
+}
+
 final class RouteActivatedFromWebSocket extends HomeRouteEvent {
   const RouteActivatedFromWebSocket({
     required this.routeId,

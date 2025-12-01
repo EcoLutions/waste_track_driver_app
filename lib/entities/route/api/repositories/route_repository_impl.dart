@@ -95,4 +95,14 @@ class RouteRepositoryImpl implements RouteRepository {
           Failure(message: msg, statusCode: code),
     };
   }
+
+  @override
+  Future<Resource<Route>> startRoute(String routeId) async {
+    final result = await _service.startRoute(routeId);
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+          Failure(message: msg, statusCode: code),
+    };
+  }
 }
