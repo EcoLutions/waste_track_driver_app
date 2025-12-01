@@ -41,7 +41,7 @@ class WebSocketManager {
     _updateStatus(WebSocketConnectionStatus.connecting);
 
     try {
-      final wsUrl = '${ApiConstants.wsBaseUrl}/ws';
+      final wsUrl = ApiConstants.wsBaseUrl;
 
       _stompClient = StompClient(
         config: StompConfig(
@@ -51,7 +51,7 @@ class WebSocketManager {
           onStompError: _onStompError,
           onWebSocketError: _onWebSocketError,
           onDebugMessage: (message) {
-            log('🐛 [WebSocket] Debug: $message');
+            log('[WebSocket] Debug: $message');
           },
           reconnectDelay: const Duration(seconds: 5),
           heartbeatIncoming: const Duration(seconds: 30),

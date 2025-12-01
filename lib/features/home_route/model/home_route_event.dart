@@ -36,3 +36,16 @@ final class RefreshActiveRoute extends HomeRouteEvent {
 final class ClearRoute extends HomeRouteEvent {
   const ClearRoute();
 }
+
+final class RouteActivatedFromWebSocket extends HomeRouteEvent {
+  const RouteActivatedFromWebSocket({
+    required this.routeId,
+    required this.driverId,
+  });
+
+  final String routeId;
+  final String driverId;
+
+  @override
+  List<Object?> get props => [routeId, driverId];
+}

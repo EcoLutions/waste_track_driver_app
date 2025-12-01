@@ -15,10 +15,10 @@ class ApiConstants {
   static String get wsBaseUrl {
     if (kDebugMode) {
       // Development (Android Emulator)
-      return 'ws://10.0.2.2:8080';
+      return 'ws://10.0.2.2:8080/ws';
     } else {
       // Production
-      return 'wss://api.ecolutions.com/api/v1';
+      return 'wss://api.ecolutions.com/ws';
     }
   }
 

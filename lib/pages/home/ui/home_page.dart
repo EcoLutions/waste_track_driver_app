@@ -38,7 +38,7 @@ class _HomePageState extends State<HomePage> {
       );
     } else {
       debugPrint(
-        '⚠️ Cannot load route: driverId=${userSessionState.driver?.id}, '
+        'Cannot load route: driverId=${userSessionState.driver?.id}, '
             'districtId=${userSessionState.district?.id}',
       );
     }
@@ -165,7 +165,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       HomeRouteNotFound() => _buildNoRouteCard(context),
-      HomeRouteFound() => const SizedBox.shrink(), // Se muestra el modal
+      HomeRouteFound() => const SizedBox.shrink(),
       HomeRouteError(:final message) => _buildErrorCard(context, message),
     };
   }
@@ -194,7 +194,7 @@ class _HomePageState extends State<HomePage> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.check_circle_outline,
+              Icons.route_outlined,
               size: 48,
               color: Colors.grey[400],
             ),
@@ -213,6 +213,47 @@ class _HomePageState extends State<HomePage> {
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Esperando nuevas rutas...',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
