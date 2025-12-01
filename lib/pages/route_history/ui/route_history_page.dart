@@ -13,12 +13,6 @@ class RouteHistoryPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Historial de Rutas'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: completedRoutes.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
