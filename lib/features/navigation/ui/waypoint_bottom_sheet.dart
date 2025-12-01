@@ -17,7 +17,7 @@ class WaypointBottomSheet extends StatefulWidget {
   final WayPointWithContainer waypoint;
   final Position? currentPosition;
   final VoidCallback onMarkAsCollected;
-  final bool isNextInSequence; // TRUE si es el siguiente waypoint a recolectar
+  final bool isNextInSequence;
 
   @override
   State<WaypointBottomSheet> createState() => _WaypointBottomSheetState();

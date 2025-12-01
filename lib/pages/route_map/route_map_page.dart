@@ -46,6 +46,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
   Set<Polyline> _polylines = {};
   bool _isLoadingMap = true;
   bool _isLoadingDirections = false;
+  double _sheetPosition = 0.35;
 
   @override
   void initState() {
@@ -121,7 +122,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
           _logger.i('Location ready, loading directions...');
           await _loadGoogleDirections(currentState);
 
-          // Enfocar en el primer waypoint pendiente
           await Future.delayed(const Duration(milliseconds: 500));
           _focusOnNextWaypoint();
         }
@@ -188,7 +188,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
       await _loadGoogleDirections(state);
     }
 
-    // Enfocar en el siguiente waypoint después de actualizar
     await Future.delayed(const Duration(milliseconds: 300));
     _focusOnNextWaypoint();
   }
@@ -361,8 +360,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
     );
   }
 
-  /// Enfoca la cámara en el siguiente waypoint pendiente
-  /// con la cámara posicionada de manera que el waypoint aparezca en la parte inferior
   void _focusOnNextWaypoint() {
     if (_mapController == null || _navState.nextWaypoint == null) return;
 
@@ -370,9 +367,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
     final waypointLat = nextWaypoint.container.latitude;
     final waypointLng = nextWaypoint.container.longitude;
 
-    // Offset para que el waypoint aparezca en la parte inferior del mapa
-    // Ajustamos la latitud hacia arriba para centrar el waypoint en la parte inferior
-    const latOffset = 0.002; // aproximadamente 200 metros hacia el norte
+    const latOffset = 0.002;
     final adjustedLat = waypointLat + latOffset;
 
     _logger.i('📍 Enfocando en el siguiente waypoint #${nextWaypoint.sequenceOrder}');
@@ -437,22 +432,19 @@ class _RouteMapPageState extends State<RouteMapPage> {
 
     WayPointWithContainer? nextWaypoint;
     if (currentState is RouteAssignmentAssigned) {
-      // Obtener el primer waypoint pendiente
       nextWaypoint = _navigationService.getNextWaypoint(currentState.waypoints);
 
-      // 🐛 DEBUG: Mostrar todos los waypoints y sus estados
-      _logger.i('🔍 DEBUG - Total waypoints: ${currentState.waypoints.length}');
+      _logger.i(' DEBUG - Total waypoints: ${currentState.waypoints.length}');
       for (var w in currentState.waypoints) {
         _logger.i('   Waypoint #${w.wayPoint.sequenceOrder}: ${w.wayPoint.status} (id: ${w.wayPoint.id})');
       }
-      _logger.i('🎯 Next waypoint: #${nextWaypoint?.wayPoint.sequenceOrder} (id: ${nextWaypoint?.wayPoint.id})');
-      _logger.i('👆 Tapped waypoint: #${waypoint.wayPoint.sequenceOrder} (id: ${waypoint.wayPoint.id})');
+      _logger.i('Next waypoint: #${nextWaypoint?.wayPoint.sequenceOrder} (id: ${nextWaypoint?.wayPoint.id})');
+      _logger.i('Tapped waypoint: #${waypoint.wayPoint.sequenceOrder} (id: ${waypoint.wayPoint.id})');
     }
 
-    // Determinar si este waypoint es el siguiente en secuencia
     final isNextInSequence = nextWaypoint?.wayPoint.id == waypoint.wayPoint.id;
 
-    _logger.i('✅ isNextInSequence: $isNextInSequence');
+    _logger.i('isNextInSequence: $isNextInSequence');
 
     showModalBottomSheet(
       context: context,
@@ -829,60 +821,68 @@ class _RouteMapPageState extends State<RouteMapPage> {
                 ),
 
               if (_navState.nextWaypoint != null && !_isLoadingDirections)
-                DraggableScrollableSheet(
-                  initialChildSize: 0.35, // 35% de la pantalla
-                  minChildSize: 0.08, // Minimizado: 8%
-                  maxChildSize: 0.4, // Máximo: 40%
-                  snap: true,
-                  snapSizes: const [0.08, 0.35],
-                  builder: (context, scrollController) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24),
-                          topRight: Radius.circular(24),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 20,
-                            offset: const Offset(0, -4),
+                NotificationListener<DraggableScrollableNotification>(
+                  onNotification: (notification) {
+                    setState(() {
+                      _sheetPosition = notification.extent;
+                    });
+                    return true;
+                  },
+                  child: DraggableScrollableSheet(
+                    initialChildSize: 0.35, // 35% de la pantalla
+                    minChildSize: 0.08, // Minimizado: 8%
+                    maxChildSize: 0.4, // Máximo: 40%
+                    snap: true,
+                    snapSizes: const [0.08, 0.35],
+                    builder: (context, scrollController) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(24),
                           ),
-                        ],
-                      ),
-                      child: ListView(
-                        controller: scrollController,
-                        padding: EdgeInsets.zero,
-                        children: [
-                          // Handle indicator
-                          Center(
-                            child: Container(
-                              margin: const EdgeInsets.only(top: 12, bottom: 8),
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, -4),
+                            ),
+                          ],
+                        ),
+                        child: ListView(
+                          controller: scrollController,
+                          padding: EdgeInsets.zero,
+                          children: [
+                            // Handle indicator
+                            Center(
+                              child: Container(
+                                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
                               ),
                             ),
-                          ),
 
-                          // Contenido del card con botón
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                            child: NextWaypointCard(
-                              waypoint: _navState.nextWaypoint!,
-                              distanceToWaypoint: _navState.distanceToNextWaypoint,
-                              onMarkAsCollected: () {
-                                _showConfirmationDialog(_navState.nextWaypoint!);
-                              },
+                            // Contenido del card con botón
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                              child: NextWaypointCard(
+                                waypoint: _navState.nextWaypoint!,
+                                distanceToWaypoint: _navState.distanceToNextWaypoint,
+                                onMarkAsCollected: () {
+                                  _showConfirmationDialog(_navState.nextWaypoint!);
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
 
               Positioned(
@@ -900,7 +900,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
               ),
 
               Positioned(
-                bottom: 30,
+                bottom: MediaQuery.of(context).size.height * _sheetPosition + 16,
                 right: 16,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
