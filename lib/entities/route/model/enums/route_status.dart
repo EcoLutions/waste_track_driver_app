@@ -1,13 +1,15 @@
 enum RouteStatus {
-  assigned,
+  planned,
+  active,
   inProgress,
   completed,
   cancelled;
 
   String get displayName => switch (this) {
-        RouteStatus.assigned => 'Assigned',
-        RouteStatus.inProgress => 'In Progress',
-        RouteStatus.completed => 'Completed',
-        RouteStatus.cancelled => 'Cancelled',
+        RouteStatus.planned => 'Planificado',
+        RouteStatus.active => 'Activado',
+        RouteStatus.inProgress => 'En progreso',
+        RouteStatus.completed => 'Completado',
+        RouteStatus.cancelled => 'Cancelado',
       };
 }

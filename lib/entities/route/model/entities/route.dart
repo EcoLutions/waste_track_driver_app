@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:waste_track_driver_app/entities/route/model/enums/route_status.dart';
-import 'package:waste_track_driver_app/entities/route/model/enums/route_type.dart';
 
 part 'route.freezed.dart';
 
@@ -11,7 +10,6 @@ sealed class Route with _$Route {
     required String districtId,
     required String vehicleId,
     required String driverId,
-    required RouteType routeType,
     required RouteStatus status,
     required DateTime scheduledStartAt,
     required DateTime createdAt,
@@ -30,7 +28,7 @@ sealed class Route with _$Route {
   }) = _Route;
   const Route._();
 
-  bool get canBeModified => status == RouteStatus.assigned;
+  bool get canBeModified => status == RouteStatus.planned;
 
   bool get isOverdue {
     if (status == RouteStatus.completed || status == RouteStatus.cancelled) {

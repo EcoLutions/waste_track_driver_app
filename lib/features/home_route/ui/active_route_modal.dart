@@ -167,7 +167,7 @@ class ActiveRouteModal extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
-    final isAssigned = route.status == RouteStatus.assigned;
+    final isAssigned = route.status == RouteStatus.planned;
 
     return GestureDetector(
       onTapDown: (_) {},

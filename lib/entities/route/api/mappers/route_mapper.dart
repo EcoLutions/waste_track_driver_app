@@ -11,7 +11,6 @@ extension RouteResponseMapper on RouteResponse {
       districtId: districtId ?? '',
       vehicleId: vehicleId ?? '',
       driverId: driverId ?? '',
-      routeType: RouteTypeMapper.parse(routeType),
       status: RouteStatusMapper.parse(status),
       scheduledStartAt: _parseDate(scheduledStartAt),
       scheduledEndAt: _parseDateOrNull(scheduledEndAt),
@@ -107,7 +106,6 @@ extension RouteToCreateRequestMapper on Route {
       districtId: districtId,
       driverId: driverId,
       vehicleId: vehicleId,
-      routeType: RouteTypeMapper.toDto(routeType),
       scheduledDate: scheduledStartAt.toIso8601String(),
     );
   }

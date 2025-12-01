@@ -9,7 +9,6 @@ sealed class CreateRouteRequest with _$CreateRouteRequest {
     String? districtId,
     String? driverId,
     String? vehicleId,
-    String? routeType,
     String? scheduledDate,
   }) = _CreateRouteRequest;
 
