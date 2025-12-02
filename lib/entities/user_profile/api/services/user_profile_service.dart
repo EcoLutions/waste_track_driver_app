@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:waste_track_driver_app/entities/user_profile/api/dto/create_user_profile_request.dart';
 import 'package:waste_track_driver_app/entities/user_profile/api/dto/update_user_profile_request.dart';
 import 'package:waste_track_driver_app/entities/user_profile/api/dto/user_profile_response.dart';
@@ -11,4 +13,5 @@ abstract class UserProfileService {
   Future<Resource<UserProfileResponse>> create(CreateUserProfileRequest request);
   Future<Resource<UserProfileResponse>> update(String id, UpdateUserProfileRequest request);
   Future<Resource<void>> delete(String id);
+  Future<Resource<String>> uploadPhoto(File file);
 }

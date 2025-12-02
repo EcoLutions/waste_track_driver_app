@@ -3,6 +3,7 @@ import 'package:waste_track_driver_app/entities/user_profile/api/dto/update_user
 import 'package:waste_track_driver_app/entities/user_profile/api/dto/user_profile_response.dart';
 import 'package:waste_track_driver_app/entities/user_profile/api/mappers/user_profile_enum_mapper.dart';
 import 'package:waste_track_driver_app/entities/user_profile/model/entities/user_profile.dart';
+import 'package:waste_track_driver_app/entities/user_profile/model/enums/language.dart';
 
 extension UserProfileResponseMapper on UserProfileResponse {
   UserProfile toDomain() {
@@ -44,7 +45,7 @@ extension UserProfileToCreateRequestMapper on UserProfile {
       districtId: districtId,
       email: email,
       phoneNumber: phoneNumber,
-      language: LanguageMapper.parseToString(language),
+      language: language.toJson(),
       timezone: timezone,
     );
   }
@@ -60,7 +61,7 @@ extension UserProfileToUpdateRequestMapper on UserProfile {
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
       pushNotificationsEnabled: pushNotificationsEnabled,
-      language: LanguageMapper.parseToString(language),
+      language: language.toJson(),
       timezone: timezone,
     );
   }
