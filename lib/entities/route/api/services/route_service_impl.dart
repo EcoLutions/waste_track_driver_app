@@ -56,8 +56,7 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<List<RouteResponse>>> getActiveByDistrictId(
-      String districtId) async {
+  Future<Resource<List<RouteResponse>>> getActiveByDistrictId(String districtId) async {
     return _dioClient.handleRequest(
           () => _dioClient.dio
           .get('${ApiConstants.baseUrl}/routes/district/$districtId/active'),
@@ -79,9 +78,7 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<RouteResponse>> update(
-      String id, UpdateRouteRequest request) async {
-    return _dioClient.handleRequest(
+  Future<Resource<RouteResponse>> update(String id, UpdateRouteRequest request) async {return _dioClient.handleRequest(
           () => _dioClient.dio.put(
         '${ApiConstants.baseUrl}/routes/$id',
         data: request.toJson(),
@@ -109,7 +106,7 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<RouteResponse>> startRoute(String routeId) {
+  Future<Resource<RouteResponse>> startRoute(String routeId) async {
     return _dioClient.handleRequest(
           () => _dioClient.dio.post(
         '${ApiConstants.baseUrl}/routes/$routeId/start',
@@ -119,7 +116,7 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) {
+  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) async {
     return _dioClient.handleRequest(
           () => _dioClient.dio.post(
         '${ApiConstants.baseUrl}/routes/$routeId/current-location',
@@ -129,6 +126,16 @@ class RouteServiceImpl implements RouteService {
         },
       ),
           (_) {},
+    );
+  }
+
+  @override
+  Future<Resource<RouteResponse>> completeRoute(String routeId) {
+    return _dioClient.handleRequest(
+          () => _dioClient.dio.post(
+        '${ApiConstants.baseUrl}/routes/$routeId/complete',
+      ),
+          (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
     );
   }
 }

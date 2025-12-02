@@ -14,6 +14,7 @@ class RouteAssignmentBloc
     on<LoadActiveRoute>(_onLoadActiveRoute);
     on<RefreshRoute>(_onRefreshRoute);
     on<ClearRoute>(_onClearRoute);
+    on<CompleteRoute>(_onCompleteRoute);
     on<GenerateWaypoints>(_onGenerateWaypoints);
     on<MarkWaypointAsVisited>(_onMarkWaypointAsVisited);
     on<UpdateDriverLocation>(_onUpdateDriverLocation);
@@ -112,6 +113,30 @@ class RouteAssignmentBloc
     _logger.i('🧹 Clearing route');
     _currentRouteId = null;
     emit(const RouteAssignmentState.noRoute());
+  }
+
+  Future<void> _onCompleteRoute(CompleteRoute event, Emitter<RouteAssignmentState> emit,) async {
+    _logger.i('🏁 Completing route');
+    emit(const RouteAssignmentState.loading());
+
+    try {
+      final result = await _routeAssignmentRepository.completeRoute(_currentRouteId!);
+
+      switch (result) {
+        case Success(data: final _):
+          _logger.i('✅ Route completed successfully');
+          emit(const RouteAssignmentState.noRoute());
+          break;
+        case Failure(message: final msg):
+          _logger.e('❌ Error completing route: $msg');
+          emit(RouteAssignmentState.error(msg));
+          break;
+      }
+    } catch (e, stackTrace) {
+      _logger.e('💥 Exception in _onCompleteRoute: $e');
+      _logger.e('StackTrace: $stackTrace');
+      emit(RouteAssignmentState.error('Error inesperado: $e'));
+    }
   }
 
   Future<void> _onGenerateWaypoints(GenerateWaypoints event, Emitter<RouteAssignmentState> emit,) async {

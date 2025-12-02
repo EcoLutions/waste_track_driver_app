@@ -110,4 +110,14 @@ class RouteRepositoryImpl implements RouteRepository {
   Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) async {
     return _service.updateDriverLocation(routeId, latitude, longitude);
   }
+
+  @override
+  Future<Resource<Route>> completeRoute(String routeId) async {
+    final result = await _service.completeRoute(routeId);
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+          Failure(message: msg, statusCode: code),
+    };
+  }
 }

@@ -478,7 +478,19 @@ class _RouteMapPageState extends State<RouteMapPage> {
     );
   }
 
-  /// Mostrar diálogo de confirmación antes de marcar como recolectado
+  void _completeRoute() {
+    _logger.i('Completando ruta...');
+    context.read<RouteAssignmentBloc>().add(const CompleteRoute());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ruta completada'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    Navigator.pop(context);
+  }
+
   void _showConfirmationDialog(WayPointWithContainer waypoint) {
     showDialog(
       context: context,
@@ -538,8 +550,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // Cerrar diálogo
-              _markWaypointAsCollected(waypoint); // Marcar como recolectado
+              Navigator.pop(dialogContext);
+              _markWaypointAsCollected(waypoint);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
@@ -552,12 +564,10 @@ class _RouteMapPageState extends State<RouteMapPage> {
     );
   }
 
-  /// Verificar si todos los waypoints están completados
   bool _areAllWaypointsCompleted(RouteAssignmentAssigned state) {
     return state.waypoints.every((w) => w.wayPoint.status == WayPointStatus.visited);
   }
 
-  /// Mostrar diálogo de finalización de ruta
   void _showCompleteRouteDialog(RouteAssignmentAssigned state) {
     showDialog(
       context: context,
@@ -600,17 +610,8 @@ class _RouteMapPageState extends State<RouteMapPage> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Cerrar diálogo
-            },
-            child: const Text('Ver Resumen'),
-          ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Cerrar diálogo
-              Navigator.pop(context); // Volver a la pantalla anterior
-            },
+            onPressed: () => _completeRoute(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,

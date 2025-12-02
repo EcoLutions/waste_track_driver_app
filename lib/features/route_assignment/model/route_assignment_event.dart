@@ -24,6 +24,10 @@ final class RefreshRoute extends RouteAssignmentEvent {
   const RefreshRoute();
 }
 
+final class CompleteRoute extends RouteAssignmentEvent {
+  const CompleteRoute();
+}
+
 final class ClearRoute extends RouteAssignmentEvent {
   const ClearRoute();
 }
@@ -45,7 +49,6 @@ final class MarkWaypointAsVisited extends RouteAssignmentEvent {
   @override
   List<Object?> get props => [waypointId];
 }
-
 
 class UpdateDriverLocation extends RouteAssignmentEvent {
   const UpdateDriverLocation({

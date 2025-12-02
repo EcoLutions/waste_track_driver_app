@@ -22,10 +22,7 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   final Logger _logger = Logger();
 
   @override
-  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver({
-    required String driverId,
-    required String districtId,
-  }) async {
+  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver({required String driverId, required String districtId,}) async {
     _logger.i('🔍 Loading active route for driver: $driverId in district: $districtId');
 
     final routesResult = await _routeRepository.getActiveByDistrictId(districtId);
@@ -56,7 +53,6 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
         return Failure(message: msg, statusCode: code);
     }
   }
-
 
   @override
   Future<Resource<RouteAssignmentData>> refreshRoute(String routeId) async {
@@ -187,5 +183,12 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
         _logger.e('Failed to update driver location');
         return const Failure(message: 'Error al actualizar la ubicación del conductor');
     }
+  }
+
+  @override
+  Future<Resource<void>> completeRoute(String routeId) {
+    _logger.i('🏁 Completing route: $routeId');
+
+    return _routeRepository.completeRoute(routeId);
   }
 }
