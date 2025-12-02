@@ -6,7 +6,8 @@ import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 
 class GreetingHeader extends StatefulWidget {
   const GreetingHeader({
-    required this.onNotificationTap, super.key,
+    required this.onNotificationTap,
+    super.key,
   });
 
   final VoidCallback onNotificationTap;
@@ -58,8 +59,15 @@ class _GreetingHeaderState extends State<GreetingHeader>
   Widget build(BuildContext context) {
     return BlocBuilder<UserSessionBloc, UserSessionState>(
       builder: (context, state) {
-        final name =
-        state is UserSessionLoaded ? state.driver?.firstName ?? 'Conductor' : 'Conductor';
+        // Obtenemos el nombre
+        final name = state is UserSessionLoaded
+            ? state.driver?.firstName ?? 'Conductor'
+            : 'Conductor';
+
+        // Obtenemos la URL de la foto (si existe)
+        final photoUrl = state is UserSessionLoaded
+            ? state.userProfile?.temporalPhotoUrl
+            : null;
 
         // Greeting dependiendo de la hora
         final hour = DateTime.now().hour;
@@ -73,14 +81,14 @@ class _GreetingHeaderState extends State<GreetingHeader>
           opacity: _fade,
           child: SlideTransition(
             position: _slide,
-            child: _buildHeader(name, greeting),
+            child: _buildHeader(name, greeting, photoUrl),
           ),
         );
       },
     );
   }
 
-  Widget _buildHeader(String name, String greeting) {
+  Widget _buildHeader(String name, String greeting, String? photoUrl) {
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Container(
@@ -103,14 +111,24 @@ class _GreetingHeaderState extends State<GreetingHeader>
       ),
       child: Row(
         children: [
+          // Avatar del usuario
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(14),
+              image: photoUrl != null && photoUrl.isNotEmpty
+                  ? DecorationImage(
+                image: NetworkImage(photoUrl),
+                fit: BoxFit.cover,
+              )
+                  : null,
             ),
-            child: const Icon(Icons.person_rounded, color: Colors.white),
+            // Mostrar icono solo si NO hay foto
+            child: photoUrl == null || photoUrl.isEmpty
+                ? const Icon(Icons.person_rounded, color: Colors.white)
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -161,7 +179,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
           ),
         ),
 
-        // Badge
+        // Badge (podrías conectarlo al estado también si tienes contador de notificaciones)
         Positioned(
           right: 4,
           top: 4,

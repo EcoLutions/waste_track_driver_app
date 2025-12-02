@@ -148,7 +148,11 @@ Future<void> init() async {
 
   // UserSessionBloc (global)
   sl.registerFactory<UserSessionBloc>(
-        () => UserSessionBloc(userSessionRepository: sl()),
+        () => UserSessionBloc(
+      userSessionRepository: sl(),
+      userProfileRepository: sl(),
+      authRepository: sl(),
+    ),
   );
 
   // RouteAssignmentBloc (for route-map page)
@@ -196,6 +200,11 @@ Future<void> init() async {
       routeRepository: sl(),
       wayPointRepository: sl(),
     ),
+  );
+
+  // UserProfileRepository
+  sl.registerLazySingleton<UserProfileRepository>(
+        () => UserProfileRepositoryImpl(sl()),
   );
 
   // ==================== SERVICES ====================
