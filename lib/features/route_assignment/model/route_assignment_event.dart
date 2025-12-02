@@ -20,25 +20,8 @@ final class LoadActiveRoute extends RouteAssignmentEvent {
   List<Object?> get props => [driverId, districtId];
 }
 
-final class RefreshRoute extends RouteAssignmentEvent {
-  const RefreshRoute();
-}
-
 final class CompleteRoute extends RouteAssignmentEvent {
   const CompleteRoute();
-}
-
-final class ClearRoute extends RouteAssignmentEvent {
-  const ClearRoute();
-}
-
-final class GenerateWaypoints extends RouteAssignmentEvent {
-  const GenerateWaypoints({required this.routeId});
-
-  final String routeId;
-
-  @override
-  List<Object?> get props => [routeId];
 }
 
 final class MarkWaypointAsVisited extends RouteAssignmentEvent {
