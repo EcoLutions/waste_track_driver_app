@@ -19,13 +19,7 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<List<RouteResponse>>> getAll({
-    String? districtId,
-    String? driverId,
-    String? vehicleId,
-    String? status,
-    List<String>? statuses,
-  }) async {
+  Future<Resource<List<RouteResponse>>> getAll({String? districtId, String? driverId, String? vehicleId, String? status, List<String>? statuses,}) async {
     final queryParams = <String, dynamic>{};
 
     if (districtId != null && districtId.isNotEmpty) {
@@ -130,10 +124,20 @@ class RouteServiceImpl implements RouteService {
   }
 
   @override
-  Future<Resource<RouteResponse>> completeRoute(String routeId) {
+  Future<Resource<RouteResponse>> completeRoute(String routeId) async {
     return _dioClient.handleRequest(
           () => _dioClient.dio.post(
         '${ApiConstants.baseUrl}/routes/$routeId/complete',
+      ),
+          (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  @override
+  Future<Resource<RouteResponse>> markWaypointAsVisited(String routeId, String waypointId) async {
+    return _dioClient.handleRequest(
+          () => _dioClient.dio.post(
+        '${ApiConstants.baseUrl}/routes/$routeId/waypoints/$waypointId/mark-visited',
       ),
           (data) => RouteResponse.fromJson(data as Map<String, dynamic>),
     );

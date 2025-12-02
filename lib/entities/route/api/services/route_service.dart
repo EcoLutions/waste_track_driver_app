@@ -20,4 +20,5 @@ abstract class RouteService {
   Future<Resource<RouteResponse>> startRoute(String routeId);
   Future<Resource<RouteResponse>> completeRoute(String routeId);
   Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude);
+  Future<Resource<RouteResponse>> markWaypointAsVisited(String routeId, String waypointId);
 }
