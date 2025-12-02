@@ -18,4 +18,5 @@ abstract class RouteRepository {
   Future<Resource<Route>> generateOptimizedWaypoints(String id);
   Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude);
   Future<Resource<Route>> completeRoute(String routeId);
+  Future<Resource<Route>> markWaypointAsVisited(String routeId, String waypointId);
 }

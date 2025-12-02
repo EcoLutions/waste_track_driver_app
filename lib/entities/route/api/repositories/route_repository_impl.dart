@@ -20,13 +20,7 @@ class RouteRepositoryImpl implements RouteRepository {
   }
 
   @override
-  Future<Resource<List<Route>>> getAll({
-    String? districtId,
-    String? driverId,
-    String? vehicleId,
-    String? status,
-    List<String>? statuses,
-  }) async {
+  Future<Resource<List<Route>>> getAll({String? districtId, String? driverId, String? vehicleId, String? status, List<String>? statuses,}) async {
     final result = await _service.getAll(
       districtId: districtId,
       driverId: driverId,
@@ -114,6 +108,16 @@ class RouteRepositoryImpl implements RouteRepository {
   @override
   Future<Resource<Route>> completeRoute(String routeId) async {
     final result = await _service.completeRoute(routeId);
+    return switch (result) {
+      Success(data: final dto) => Success(dto.toDomain()),
+      Failure(message: final msg, statusCode: final code) =>
+          Failure(message: msg, statusCode: code),
+    };
+  }
+
+  @override
+  Future<Resource<Route>> markWaypointAsVisited(String routeId, String waypointId) async {
+    final result = await _service.markWaypointAsVisited(routeId, waypointId);
     return switch (result) {
       Success(data: final dto) => Success(dto.toDomain()),
       Failure(message: final msg, statusCode: final code) =>
