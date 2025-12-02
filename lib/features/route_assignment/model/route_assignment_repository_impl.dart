@@ -58,8 +58,7 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId) async {
     _logger.i('✅ Marking waypoint as visited: $waypointId');
 
-    // Llamar al endpoint para marcar como visitado (pasando routeId)
-    final result = await _wayPointRepository.markAsVisited(waypointId, routeId);
+    final result = await _routeRepository.markWaypointAsVisited(routeId, waypointId);
 
     switch (result) {
       case Success():
