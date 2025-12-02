@@ -22,10 +22,7 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
   final Logger _logger = Logger();
 
   @override
-  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver({
-    required String driverId,
-    required String districtId,
-  }) async {
+  Future<Resource<RouteAssignmentData>> loadActiveRouteForDriver({required String driverId, required String districtId,}) async {
     _logger.i('🔍 Loading active route for driver: $driverId in district: $districtId');
 
     final routesResult = await _routeRepository.getActiveByDistrictId(districtId);
@@ -57,38 +54,11 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
     }
   }
 
-
-  @override
-  Future<Resource<RouteAssignmentData>> refreshRoute(String routeId) async {
-    _logger.i('🔄 Refreshing route: $routeId');
-    return _loadRouteData(routeId);
-  }
-
-  @override
-  Future<Resource<RouteAssignmentData>> generateOptimizedWaypoints(String routeId) async {
-    _logger.i('🗺️ Generating optimized waypoints for route: $routeId');
-
-    // Llamar al endpoint para generar waypoints
-    final result = await _routeRepository.generateOptimizedWaypoints(routeId);
-
-    switch (result) {
-      case Success():
-        _logger.i('✅ Waypoints generated, reloading route data');
-        // Recargar todos los datos (route, waypoints, containers)
-        return _loadRouteData(routeId);
-
-      case Failure(message: final msg, statusCode: final code):
-        _logger.e('❌ Failed to generate waypoints: $msg');
-        return Failure(message: msg, statusCode: code);
-    }
-  }
-
   @override
   Future<Resource<RouteAssignmentData>> markWaypointAsVisited(String waypointId, String routeId) async {
     _logger.i('✅ Marking waypoint as visited: $waypointId');
 
-    // Llamar al endpoint para marcar como visitado (pasando routeId)
-    final result = await _wayPointRepository.markAsVisited(waypointId, routeId);
+    final result = await _routeRepository.markWaypointAsVisited(routeId, waypointId);
 
     switch (result) {
       case Success():
@@ -171,5 +141,28 @@ class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
         _logger.e('❌ Failed to load route: $msg');
         return Failure(message: msg, statusCode: code);
     }
+  }
+
+  @override
+  Future<Resource<void>> updateDriverLocation(String routeId, double latitude, double longitude) async {
+    _logger.i('📍 Updating driver location for route: $routeId');
+
+    final result = await _routeRepository.updateDriverLocation(routeId, latitude, longitude);
+
+    switch (result) {
+      case Success():
+        _logger.i('Driver location updated');
+        return const Success(null);
+      case Failure<void>():
+        _logger.e('Failed to update driver location');
+        return const Failure(message: 'Error al actualizar la ubicación del conductor');
+    }
+  }
+
+  @override
+  Future<Resource<void>> completeRoute(String routeId) {
+    _logger.i('🏁 Completing route: $routeId');
+
+    return _routeRepository.completeRoute(routeId);
   }
 }

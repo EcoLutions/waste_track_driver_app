@@ -5,6 +5,7 @@ import 'package:waste_track_driver_app/app/bloc/auth/auth_bloc.dart';
 import 'package:waste_track_driver_app/app/bloc/auth/auth_state.dart';
 import 'package:waste_track_driver_app/app/di/injection_container.dart';
 import 'package:waste_track_driver_app/features/home_route/model/home_route_bloc.dart';
+import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
 import 'package:waste_track_driver_app/pages/home/ui/home_page.dart';
 import 'package:waste_track_driver_app/pages/login/ui/login_page.dart';
 import 'package:waste_track_driver_app/pages/main_navigation/ui/main_navigation_page.dart';
@@ -105,22 +106,15 @@ class AppRouter {
             ),
           ],
         ),
-
-        GoRoute(
-          path: '/route-active',
-          name: 'route-active',
-          builder: (context, state) => const Scaffold(
-            body: Center(
-              child: Text('Route Active Page - TODO'),
-            ),
-          ),
-        ),
         GoRoute(
           path: '/route-map/:id',
           name: 'route-map',
           builder: (context, state) {
             final id = state.pathParameters['id']!;
-            return RouteMapPage(routeId: id);
+            return BlocProvider(
+              create: (_) => sl<RouteAssignmentBloc>(),
+              child: RouteMapPage(routeId: id)
+            );
           },
         ),
         GoRoute(

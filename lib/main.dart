@@ -10,7 +10,6 @@ import 'package:waste_track_driver_app/app/bloc/user_session/user_session_event.
 import 'package:waste_track_driver_app/app/di/injection_container.dart' as di;
 import 'package:waste_track_driver_app/app/router/app_router.dart';
 import 'package:waste_track_driver_app/app/theme/app_theme.dart';
-import 'package:waste_track_driver_app/features/route_assignment/model/route_assignment_bloc.dart';
   
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +28,6 @@ class EcoLutionsDriverApp extends StatefulWidget {
 class _EcoLutionsDriverAppState extends State<EcoLutionsDriverApp> {
   late final AuthBloc _authBloc;
   late final UserSessionBloc _userSessionBloc;
-  late final RouteAssignmentBloc _routeAssignmentBloc;
   late final GoRouter router;
 
   @override
@@ -37,7 +35,6 @@ class _EcoLutionsDriverAppState extends State<EcoLutionsDriverApp> {
     super.initState();
     _authBloc = di.sl<AuthBloc>()..add(const TokenValidationRequested());
     _userSessionBloc = di.sl<UserSessionBloc>();
-    _routeAssignmentBloc = di.sl<RouteAssignmentBloc>();
     router = AppRouter.createRouter(_authBloc);
   }
 
@@ -45,7 +42,6 @@ class _EcoLutionsDriverAppState extends State<EcoLutionsDriverApp> {
   void dispose() {
     _authBloc.close();
     _userSessionBloc.close();
-    _routeAssignmentBloc.close();
     super.dispose();
   }
 
@@ -54,8 +50,7 @@ class _EcoLutionsDriverAppState extends State<EcoLutionsDriverApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: _authBloc),
-        BlocProvider<UserSessionBloc>.value(value: _userSessionBloc),
-        BlocProvider<RouteAssignmentBloc>.value(value: _routeAssignmentBloc),
+        BlocProvider<UserSessionBloc>.value(value: _userSessionBloc)
       ],
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
