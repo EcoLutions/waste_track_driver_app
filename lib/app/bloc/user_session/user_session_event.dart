@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:waste_track_driver_app/entities/user_profile/user_profile.dart';
 
@@ -36,4 +38,22 @@ final class UpdateUserProfile extends UserSessionEvent {
 
 final class ClearUserSession extends UserSessionEvent {
   const ClearUserSession();
+}
+
+class SaveProfileChanges extends UserSessionEvent {
+  final String? firstName;
+  final String? lastName;
+  final String? phoneNumber;
+  final File? newPhotoFile;
+
+  const SaveProfileChanges({
+    this.firstName,
+    this.lastName,
+    this.phoneNumber,
+    this.newPhotoFile,
+  });
+}
+
+class PerformLogout extends UserSessionEvent {
+  const PerformLogout();
 }
