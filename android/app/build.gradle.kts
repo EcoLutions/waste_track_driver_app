@@ -39,6 +39,13 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "androidx.activity") {
+            useVersion("1.9.3")
+        }
+    }
+}
 flutter {
     source = "../.."
 }
