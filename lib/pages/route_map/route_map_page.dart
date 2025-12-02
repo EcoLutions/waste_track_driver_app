@@ -11,6 +11,7 @@ import 'package:waste_track_driver_app/app/theme/app_colors.dart';
 import 'package:waste_track_driver_app/entities/waypoint/model/enums/waypoint_status.dart';
 import 'package:waste_track_driver_app/features/navigation/model/navigation_service.dart';
 import 'package:waste_track_driver_app/features/navigation/model/navigation_state.dart';
+import 'package:waste_track_driver_app/features/navigation/ui/complete_route_card.dart';
 import 'package:waste_track_driver_app/features/navigation/ui/navigation_instruction_panel.dart';
 import 'package:waste_track_driver_app/features/navigation/ui/next_waypoint_card.dart';
 import 'package:waste_track_driver_app/features/navigation/ui/route_progress_card.dart';
@@ -478,19 +479,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
     );
   }
 
-  void _completeRoute() {
-    _logger.i('Completando ruta...');
-    context.read<RouteAssignmentBloc>().add(const CompleteRoute());
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ruta completada'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-    Navigator.pop(context);
-  }
-
   void _showConfirmationDialog(WayPointWithContainer waypoint) {
     showDialog(
       context: context,
@@ -568,116 +556,53 @@ class _RouteMapPageState extends State<RouteMapPage> {
     return state.waypoints.every((w) => w.wayPoint.status == WayPointStatus.visited);
   }
 
-  void _showCompleteRouteDialog(RouteAssignmentAssigned state) {
+  void _completeRoute() {
+    _logger.i('Completando ruta...');
+    context.read<RouteAssignmentBloc>().add(const CompleteRoute());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ruta completada'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    Navigator.pop(context);
+  }
+
+  void _showFinalConfirmationDialog(RouteAssignmentAssigned state) {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: AppColors.success,
-                size: 32,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                '¡Ruta Completada!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
+            Icon(Icons.flag, color: AppColors.success, size: 28),
+            SizedBox(width: 12),
+            Text('Finalizar Ruta'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Has completado todos los puntos de recolección de esta ruta.',
-              style: TextStyle(fontSize: 15),
-            ),
-            const SizedBox(height: 16),
-            _buildRouteSummary(state),
-          ],
+        content: const Text(
+          '¿Confirmas que deseas finalizar esta ruta? Esta acción marcará la ruta como completada.',
+          style: TextStyle(fontSize: 15),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
-            onPressed: () => _completeRoute(),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _completeRoute();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Finalizar Ruta'),
+            child: const Text('Finalizar'),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildRouteSummary(RouteAssignmentAssigned state) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _buildSummaryRow(
-            Icons.check_circle_outline,
-            'Puntos completados',
-            '${state.waypoints.length}',
-            AppColors.success,
-          ),
-          const SizedBox(height: 8),
-          _buildSummaryRow(
-            Icons.straighten,
-            'Distancia total',
-            state.route.formattedTotalDistance,
-            AppColors.primary,
-          ),
-          const SizedBox(height: 8),
-          _buildSummaryRow(
-            Icons.access_time,
-            'Tiempo estimado',
-            state.route.formattedEstimatedDuration,
-            AppColors.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(IconData icon, String label, String value, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 
@@ -695,7 +620,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
     return Scaffold(
       body: BlocConsumer<RouteAssignmentBloc, RouteAssignmentState>(
         listener: (context, state) {
-          _logger.d('RouteAssignmentBloc state changed: ${state.runtimeType}');
+          _logger.d('📡 RouteAssignmentBloc state changed: ${state.runtimeType}');
 
           if (state is RouteAssignmentAssigned) {
             _logger.i('Route assigned with ${state.waypoints.length} waypoints');
@@ -722,15 +647,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
               _updateMarkers(state);
             }
 
-            // Verificar si todos los waypoints están completados
-            if (_areAllWaypointsCompleted(state)) {
-              _logger.i('🎉 All waypoints completed!');
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (mounted) {
-                  _showCompleteRouteDialog(state);
-                }
-              });
-            }
           }
         },
         builder: (context, state) {
@@ -836,7 +752,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   ),
                 ),
 
-              if (_navState.nextWaypoint != null && !_isLoadingDirections)
+              if (state is RouteAssignmentAssigned && !_isLoadingDirections)
                 NotificationListener<DraggableScrollableNotification>(
                   onNotification: (notification) {
                     setState(() {
@@ -845,12 +761,14 @@ class _RouteMapPageState extends State<RouteMapPage> {
                     return true;
                   },
                   child: DraggableScrollableSheet(
-                    initialChildSize: 0.35, // 35% de la pantalla
-                    minChildSize: 0.08, // Minimizado: 8%
-                    maxChildSize: 0.4, // Máximo: 40%
+                    initialChildSize: 0.35,
+                    minChildSize: 0.08,
+                    maxChildSize: 0.45,
                     snap: true,
                     snapSizes: const [0.08, 0.35],
                     builder: (context, scrollController) {
+                      final allCompleted = _areAllWaypointsCompleted(state);
+
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -883,16 +801,25 @@ class _RouteMapPageState extends State<RouteMapPage> {
                               ),
                             ),
 
-                            // Contenido del card con botón
                             Padding(
                               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                              child: NextWaypointCard(
+                              child: allCompleted
+                                  ? CompleteRouteCard(
+                                route: state.route,
+                                waypoints: state.waypoints,
+                                onCompleteRoute: () {
+                                  _showFinalConfirmationDialog(state);
+                                },
+                              )
+                                  : _navState.nextWaypoint != null
+                                  ? NextWaypointCard(
                                 waypoint: _navState.nextWaypoint!,
                                 distanceToWaypoint: _navState.distanceToNextWaypoint,
                                 onMarkAsCollected: () {
                                   _showConfirmationDialog(_navState.nextWaypoint!);
                                 },
-                              ),
+                              )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         ),
